@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 import subprocess
 import sys
 from . import models, schemas
-from .database import engine
-from app.routers import problems
+from .database import engine, get_db
+from app.routers import problems, users
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -24,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(problems.router)
+app.include_router(users.router)
 
 @app.post("/run")
 async def run_code(submission: schemas.CodeSubmission):
@@ -41,52 +42,14 @@ async def run_code(submission: schemas.CodeSubmission):
         return {"output": "", "error": str(e)}
 
 @app.post("/problems/{problem_id}/tests", response_model=schemas.TestCase)
-async def create_test_case(problem_id: int, test_case: schemas.TestCaseCreate, db: Session = Depends(problems.get_db)):
+async def create_test_case(problem_id: int, test_case: schemas.TestCaseCreate, db: Session = Depends(get_db)):
     db_test_case = models.TestCase(**test_case.dict(), problem_id=problem_id)
     db.add(db_test_case)
     db.commit()
     db.refresh(db_test_case)
     return db_test_case
 
-@app.post("/submit/{problem_id}")
-async def submit_solution(problem_id: int, submission: schemas.CodeSubmission, db: Session = Depends(problems.get_db)):
-    test_cases = db.query(models.TestCase).filter(models.TestCase.problem_id == problem_id).all()
-    results = []
 
-    for test in test_cases:
-        try:
-            result = subprocess.run(
-                [sys.executable, "-c", submission.code],
-                input=test.input_data,
-                capture_output=True,
-                text=True,
-                timeout=3
-            )
-            actual_output = result.stdout.strip()
-            expected_output = test.expected_output.strip()
-            passed = actual_output == expected_output
-            results.append({
-                "test_id": test.id,
-                "passed": passed,
-                "input": test.input_data,
-                "expected": expected_output,
-                "actual": actual_output,
-                "error": result.stderr
-            })
-        except subprocess.TimeoutExpired:
-            results.append({
-                "test_id": test.id,
-                "passed": False,
-                "error": "Execution timed out"
-            })
-        except Exception as e:
-            results.append({
-                "test_id": test.id,
-                "passed": False,
-                "error": str(e)
-            })
-    
-    return results
 
 @app.get("/")
 async def root():

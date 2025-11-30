@@ -1,3 +1,7 @@
 fastapi
 uvicorn
 sqlalchemy
+passlib
+argon2-cffi
+python-jose[cryptography]
+python-multipart

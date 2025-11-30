@@ -29,6 +29,12 @@ function ProblemPage() {
     }, [id])
 
     const handleSubmit = () => {
+        const token = localStorage.getItem('token')
+        if (!token) {
+            alert("Please login first!")
+            return
+        }
+
         setIsRunning(true)
         setResults(null)
 
@@ -36,6 +42,7 @@ function ProblemPage() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
             },
             body: JSON.stringify({ code: code }),
         })

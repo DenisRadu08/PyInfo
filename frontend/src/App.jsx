@@ -36,12 +36,22 @@ function ProblemList() {
   )
 }
 
+import LoginPage from './LoginPage'
+import Navbar from './Navbar'
+
+import ProfilePage from './ProfilePage'
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<ProblemList />} />
-      <Route path="/problem/:id" element={<ProblemPage />} />
-    </Routes>
+    <div>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<ProblemList />} />
+        <Route path="/problem/:id" element={<ProblemPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
+    </div>
   )
 }
 

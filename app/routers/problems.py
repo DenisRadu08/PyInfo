@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from app import database, models, schemas
+import subprocess
+import sys
+from app import database, models, schemas, utils, dependencies
+from app.database import get_db
 
 router = APIRouter()
-
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/problems", response_model=List[schemas.Problem])
 async def get_problems(db: Session = Depends(get_db)):
@@ -40,3 +36,67 @@ async def delete_test_case(test_id: int, db: Session = Depends(get_db)):
     db.delete(test_case)
     db.commit()
     return {"message": "Test deleted"}
+
+@router.post("/submit/{problem_id}")
+async def submit_solution(
+    problem_id: int, 
+    submission: schemas.CodeSubmission, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_user)
+):
+    print(f"User {current_user.email} is submitting")
+    test_cases = db.query(models.TestCase).filter(models.TestCase.problem_id == problem_id).all()
+    results = []
+
+    for test in test_cases:
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", submission.code],
+                input=test.input_data,
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            actual_output = result.stdout.strip()
+            expected_output = test.expected_output.strip()
+            passed = actual_output == expected_output
+            results.append({
+                "test_id": test.id,
+                "passed": passed,
+                "input": test.input_data,
+                "expected": expected_output,
+                "actual": actual_output,
+                "error": result.stderr
+            })
+        except subprocess.TimeoutExpired:
+            results.append({
+                "test_id": test.id,
+                "passed": False,
+                "error": "Execution timed out"
+            })
+        except Exception as e:
+            results.append({
+                "test_id": test.id,
+                "passed": False,
+                "error": str(e)
+            })
+    
+    # Determine overall status
+    overall_status = "Passed" if all(r["passed"] for r in results) else "Failed"
+
+    # Create submission record
+    db_submission = models.Submission(
+        code=submission.code,
+        status=overall_status,
+        user_id=current_user.id,
+        problem_id=problem_id
+    )
+    db.add(db_submission)
+    db.commit()
+    db.refresh(db_submission)
+
+    # Add submission_id to results (optional, but requested)
+    for result in results:
+        result["submission_id"] = db_submission.id
+
+    return results
