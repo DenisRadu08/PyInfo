@@ -40,6 +40,7 @@ import LoginPage from './LoginPage'
 import Navbar from './Navbar'
 
 import ProfilePage from './ProfilePage'
+import AddProblemPage from './AddProblemPage'
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
         <Route path="/problem/:id" element={<ProblemPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/add-problem" element={<AddProblemPage />} />
       </Routes>
     </div>
   )

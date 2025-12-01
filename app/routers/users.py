@@ -14,11 +14,15 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_password = utils.get_password_hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password)
+    db_user = models.User(email=user.email, hashed_password=hashed_password, is_admin=user.is_admin)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+@router.get("/users/me", response_model=schemas.User)
+async def read_users_me(current_user: models.User = Depends(dependencies.get_current_user)):
+    return current_user
 
 @router.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):

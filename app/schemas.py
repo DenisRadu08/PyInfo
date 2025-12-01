@@ -20,10 +20,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    is_admin: bool = False
 
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
 
     class Config:
         from_attributes = True

@@ -30,6 +30,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Integer, default=True)
+    is_admin = Column(Integer, default=False)
 
     submissions = relationship("Submission", back_populates="user")
 

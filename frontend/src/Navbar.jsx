@@ -1,7 +1,27 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 function Navbar() {
     const email = localStorage.getItem('user_email')
+    const [isAdmin, setIsAdmin] = useState(false)
+
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (token) {
+            fetch('http://127.0.0.1:8000/users/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.is_admin) {
+                        setIsAdmin(true)
+                    }
+                })
+                .catch(err => console.error("Error fetching user details:", err))
+        }
+    }, [])
 
     const handleLogout = () => {
         localStorage.removeItem('token')
@@ -23,6 +43,9 @@ function Navbar() {
                 <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>Home</Link>
                 {email && (
                     <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>Profile</Link>
+                )}
+                {isAdmin && (
+                    <Link to="/add-problem" style={{ color: '#ffc107', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>New Problem</Link>
                 )}
             </div>
 
