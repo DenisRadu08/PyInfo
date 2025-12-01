@@ -30,46 +30,38 @@ function Navbar() {
     }
 
     return (
-        <nav style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '15px 30px',
-            backgroundColor: '#333',
-            color: 'white',
-            marginBottom: '20px'
-        }}>
-            <div style={{ display: 'flex', gap: '20px' }}>
-                <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>Home</Link>
-                {email && (
-                    <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>Profile</Link>
-                )}
-                {isAdmin && (
-                    <Link to="/add-problem" style={{ color: '#ffc107', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1em' }}>New Problem</Link>
-                )}
-            </div>
+        <nav className="bg-emerald-600 shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="text-white font-bold text-xl">PyCode Arena</Link>
+                        <div className="flex items-baseline space-x-4">
+                            <Link to="/" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</Link>
+                            {email && (
+                                <Link to="/profile" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Profile</Link>
+                            )}
+                            {isAdmin && (
+                                <Link to="/add-problem" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">New Problem</Link>
+                            )}
+                        </div>
+                    </div>
 
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                {email ? (
-                    <>
-                        <span>Hello, {email}</span>
-                        <button
-                            onClick={handleLogout}
-                            style={{
-                                padding: '5px 15px',
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '5px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Logout
-                        </button>
-                    </>
-                ) : (
-                    <Link to="/login" style={{ color: 'white', textDecoration: 'none' }}>Login</Link>
-                )}
+                    <div className="flex items-center">
+                        {email ? (
+                            <>
+                                <span className="text-emerald-100 text-sm mr-4">Hello, {email}</span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="bg-white text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <Link to="/login" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</Link>
+                        )}
+                    </div>
+                </div>
             </div>
         </nav>
     )
