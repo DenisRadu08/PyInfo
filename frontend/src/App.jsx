@@ -72,11 +72,14 @@ import Navbar from './Navbar'
 import ProfilePage from './ProfilePage'
 import AddProblemPage from './AddProblemPage'
 
+import { Toaster } from 'react-hot-toast'
+
 function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Toaster position="top-center" reverseOrder={false} />
         <Routes>
           <Route path="/" element={<ProblemList />} />
           <Route path="/problem/:id" element={<ProblemPage />} />

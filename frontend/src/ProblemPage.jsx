@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
+import toast from 'react-hot-toast'
 
 function ProblemPage() {
     const { id } = useParams()
@@ -28,10 +29,12 @@ function ProblemPage() {
             })
     }, [id])
 
+
+
     const handleSubmit = () => {
         const token = localStorage.getItem('token')
         if (!token) {
-            alert("Please login first!")
+            toast.error("Please login first!")
             return
         }
 
@@ -109,8 +112,8 @@ function ProblemPage() {
                             onClick={handleSubmit}
                             disabled={isRunning}
                             className={`w-full font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition ${isRunning
-                                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
+                                ? 'bg-gray-400 cursor-not-allowed text-white'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
                                 }`}
                         >
                             {isRunning ? 'Running Tests...' : 'Run Code'}

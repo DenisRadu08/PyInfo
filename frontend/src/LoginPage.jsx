@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 
 function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+
 
 
     const handleSubmit = async (e) => {
@@ -26,14 +28,16 @@ function LoginPage() {
                 const data = await response.json()
                 localStorage.setItem('token', data.access_token)
                 localStorage.setItem('user_email', email)
-                alert('Login Successful!')
-                window.location.href = '/'
+                toast.success('Login Successful!')
+                setTimeout(() => {
+                    window.location.href = '/'
+                }, 1500)
             } else {
-                alert('Invalid credentials')
+                toast.error('Invalid credentials')
             }
         } catch (error) {
             console.error('Login error:', error)
-            alert('An error occurred during login')
+            toast.error('An error occurred during login')
         }
     }
 

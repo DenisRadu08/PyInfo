@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import toast from 'react-hot-toast'
+
 function AddProblemPage() {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -27,7 +29,7 @@ function AddProblemPage() {
         e.preventDefault()
         const token = localStorage.getItem('token')
         if (!token) {
-            alert('You must be logged in to add a problem.')
+            toast.error('You must be logged in to add a problem.')
             return
         }
 
@@ -59,11 +61,13 @@ function AddProblemPage() {
                 }
             }
 
-            alert('Problem added successfully!')
-            navigate('/')
+            toast.success('Problem added successfully!')
+            setTimeout(() => {
+                navigate('/')
+            }, 1000)
         } catch (error) {
             console.error('Error adding problem:', error)
-            alert('Failed to add problem.')
+            toast.error('Failed to add problem.')
         }
     }
 
