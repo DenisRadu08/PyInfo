@@ -7,3 +7,4 @@ python-jose[cryptography]
 python-multipart
 requests
 argon2-cffi
+google-generativeai
