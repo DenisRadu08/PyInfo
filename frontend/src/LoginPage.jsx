@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import axios from 'axios'
 
 
 function LoginPage() {
@@ -16,28 +17,27 @@ function LoginPage() {
         formData.append('password', password)
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/token', {
-                method: 'POST',
+            const response = await axios.post('http://127.0.0.1:8000/token', formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: formData,
             })
 
-            if (response.ok) {
-                const data = await response.json()
-                localStorage.setItem('token', data.access_token)
-                localStorage.setItem('user_email', email)
-                toast.success('Login Successful!')
-                setTimeout(() => {
-                    window.location.href = '/'
-                }, 1500)
-            } else {
-                toast.error('Invalid credentials')
-            }
+            localStorage.setItem('token', response.data.access_token)
+            localStorage.setItem('user_email', email)
+            localStorage.setItem('email', email)
+            toast.success('Login Successful!')
+            setTimeout(() => {
+                window.location.href = '/'
+            }, 1500)
+
         } catch (error) {
             console.error('Login error:', error)
-            toast.error('An error occurred during login')
+            if (error.response && error.response.status === 401) {
+                toast.error('Invalid credentials')
+            } else {
+                toast.error('An error occurred during login')
+            }
         }
     }
 

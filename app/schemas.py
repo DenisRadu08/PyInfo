@@ -36,14 +36,20 @@ class ProblemBase(BaseModel):
     difficulty: str
 
 class ProblemCreate(ProblemBase):
-    pass
+    test_cases: List[TestCaseCreate] = []
 
 class Problem(ProblemBase):
     id: int
     test_cases: List[TestCase] = []
+    is_solved: bool = False
 
     class Config:
         from_attributes = True
 
 class CodeSubmission(BaseModel):
     code: str
+    input_data: str | None = None
+
+class SubmissionRequest(BaseModel):
+    code: str
+    problem_id: int

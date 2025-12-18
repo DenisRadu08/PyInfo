@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+.react-calendar-heatmap text {
+    font-size: 10px;
+    fill: #94a3b8;
+}
+
+.react-calendar-heatmap .color-empty {
+    fill: #f1f5f9;
+}
+
+.react-calendar-heatmap .color-scale-1 {
+    fill: #d1fae5;
+}
+
+/* Light Emerald */
+.react-calendar-heatmap .color-scale-2 {
+    fill: #6ee7b7;
+}
+
+.react-calendar-heatmap .color-scale-3 {
+    fill: #10b981;
+}
+
+.react-calendar-heatmap .color-scale-4 {
+    fill: #047857;
+}
+
+/* Dark Emerald */
+
+/* 1. Disable default ugly browser outline on click */
+.react-calendar-heatmap rect:focus,
+.react-calendar-heatmap rect:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* 2. Unify Hover and Focus states with a subtle effect */
+.react-calendar-heatmap rect:hover,
+.react-calendar-heatmap rect:focus {
+    /* Slightly darken the square to show interaction */
+    filter: brightness(0.85);
+    /* Smooth transition */
+    transition: filter 0.15s ease-in-out;
+    /* Ensure the mouse cursor looks like a pointer */
+    cursor: pointer;
+}

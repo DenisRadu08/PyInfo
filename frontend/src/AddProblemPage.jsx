@@ -1,14 +1,43 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import axios from 'axios'
 
 import toast from 'react-hot-toast'
 
 function AddProblemPage() {
+    const { id } = useParams()
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [difficulty, setDifficulty] = useState('Easy')
     const [testCases, setTestCases] = useState([{ input_data: '', expected_output: '' }])
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (id) {
+            setLoading(true)
+            axios.get(`http://127.0.0.1:8000/problems/${id}`)
+                .then(res => {
+                    const problem = res.data
+                    setTitle(problem.title)
+                    setDescription(problem.description)
+                    setDifficulty(problem.difficulty)
+                    if (problem.test_cases && problem.test_cases.length > 0) {
+                        // Ensure compatible structure
+                        setTestCases(problem.test_cases.map(tc => ({
+                            input_data: tc.input_data,
+                            expected_output: tc.expected_output
+                        })))
+                    }
+                    setLoading(false)
+                })
+                .catch(err => {
+                    console.error("Error fetching problem:", err)
+                    toast.error("Failed to load problem details")
+                    setLoading(false)
+                })
+        }
+    }, [id])
 
     const handleTestCaseChange = (index, field, value) => {
         const newTestCases = [...testCases]
@@ -29,51 +58,58 @@ function AddProblemPage() {
         e.preventDefault()
         const token = localStorage.getItem('token')
         if (!token) {
-            toast.error('You must be logged in to add a problem.')
+            toast.error('You must be logged in.')
             return
         }
 
-        try {
-            // 1. Create Problem
-            const problemRes = await fetch('http://127.0.0.1:8000/problems', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ title, description, difficulty })
-            })
-
-            if (!problemRes.ok) throw new Error('Failed to create problem')
-            const problem = await problemRes.json()
-
-            // 2. Add Test Cases
-            for (const test of testCases) {
-                if (test.input_data && test.expected_output) {
-                    await fetch(`http://127.0.0.1:8000/problems/${problem.id}/tests`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(test)
-                    })
-                }
+        const config = {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
+        }
 
-            toast.success('Problem added successfully!')
-            setTimeout(() => {
-                navigate('/')
-            }, 1000)
+        try {
+            if (id) {
+                // UPDATE
+                await axios.put(`http://127.0.0.1:8000/problems/${id}`, {
+                    title,
+                    description,
+                    difficulty,
+                    test_cases: testCases
+                }, config)
+                toast.success('Problem updated successfully!')
+                navigate(`/problem/${id}`)
+            } else {
+                // CREATE
+                // 1. Create Problem
+                const problemRes = await axios.post('http://127.0.0.1:8000/problems', {
+                    title, description, difficulty
+                }, config)
+
+                const problem = problemRes.data
+
+                // 2. Add Test Cases
+                for (const test of testCases) {
+                    if (test.input_data && test.expected_output) {
+                        await axios.post(`http://127.0.0.1:8000/problems/${problem.id}/tests`, test, config)
+                    }
+                }
+                toast.success('Problem added successfully!')
+                setTimeout(() => {
+                    navigate('/')
+                }, 1000)
+            }
         } catch (error) {
-            console.error('Error adding problem:', error)
-            toast.error('Failed to add problem.')
+            console.error('Error saving problem:', error)
+            toast.error('Failed to save problem.')
         }
     }
 
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading problem...</div>
+
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-            <h1>Add New Problem</h1>
+            <h1>{id ? 'Edit Problem' : 'Add New Problem'}</h1>
             <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '15px' }}>
                     <label style={{ display: 'block', marginBottom: '5px' }}>Title:</label>
@@ -110,22 +146,18 @@ function AddProblemPage() {
                 <h3>Test Cases</h3>
                 {testCases.map((test, index) => (
                     <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
-                        <div style={{ marginBottom: '5px' }}>
-                            <label>Input:</label>
-                            <input
-                                type="text"
+                        <div className="flex gap-4 mb-2">
+                            <textarea
+                                placeholder="Input"
                                 value={test.input_data}
-                                onChange={(e) => handleTestCaseChange(index, 'input_data', e.target.value)}
-                                style={{ width: '100%', padding: '5px', marginTop: '5px' }}
+                                onChange={(e) => handleTestCaseChange(index, "input_data", e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md font-mono text-sm h-24 resize-y"
                             />
-                        </div>
-                        <div style={{ marginBottom: '5px' }}>
-                            <label>Output:</label>
-                            <input
-                                type="text"
+                            <textarea
+                                placeholder="Expected Output"
                                 value={test.expected_output}
-                                onChange={(e) => handleTestCaseChange(index, 'expected_output', e.target.value)}
-                                style={{ width: '100%', padding: '5px', marginTop: '5px' }}
+                                onChange={(e) => handleTestCaseChange(index, "expected_output", e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md font-mono text-sm h-24 resize-y"
                             />
                         </div>
                         {testCases.length > 1 && (
@@ -152,7 +184,7 @@ function AddProblemPage() {
                     type="submit"
                     style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px' }}
                 >
-                    Save Problem
+                    {id ? 'Update Problem' : 'Save Problem'}
                 </button>
             </form>
         </div>

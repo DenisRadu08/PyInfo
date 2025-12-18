@@ -1,7 +1,9 @@
-fastapi
+﻿fastapi
 uvicorn
 sqlalchemy
-passlib
-argon2-cffi
+pydantic
+passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
+requests
+google-generativeai

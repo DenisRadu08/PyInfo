@@ -1,78 +1,196 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import Editor from '@monaco-editor/react'
-import toast from 'react-hot-toast'
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import Editor from '@monaco-editor/react';
+import axios from 'axios';
+
+const PYTHON_KEYWORDS = [
+    'def', 'class', 'import', 'return', 'if', 'else', 'while', 'for',
+    'print', 'input', 'len', 'range', 'int', 'str', 'sum', 'max', 'min', 'sorted', 'list', 'dict', 'set'
+];
 
 function ProblemPage() {
-    const { id } = useParams()
-    const [problem, setProblem] = useState(null)
-    const [loading, setLoading] = useState(true)
-    const [code, setCode] = useState('print("Hello World")')
-    const [results, setResults] = useState(null)
-    const [isRunning, setIsRunning] = useState(false)
+    const { id } = useParams();
+    const [problem, setProblem] = useState(null);
+    const [code, setCode] = useState('print("Hello World")');
+    const [customInput, setCustomInput] = useState('');
+    const [output, setOutput] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(true);
+    const autocompleteRef = useRef(isAutocompleteEnabled);
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/problems/${id}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Problem not found')
+        autocompleteRef.current = isAutocompleteEnabled;
+    }, [isAutocompleteEnabled]);
+
+    function handleEditorDidMount(editor, monaco) {
+        monaco.languages.registerCompletionItemProvider('python', {
+            provideCompletionItems: (model, position) => {
+                if (!autocompleteRef.current) {
+                    return { suggestions: [] };
                 }
-                return response.json()
-            })
-            .then(data => {
-                setProblem(data)
-                setLoading(false)
-            })
-            .catch(error => {
-                console.error('Error fetching problem:', error)
-                setLoading(false)
-            })
-    }, [id])
-
-
-
-    const handleSubmit = () => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            toast.error("Please login first!")
-            return
-        }
-
-        setIsRunning(true)
-        setResults(null)
-
-        fetch(`http://127.0.0.1:8000/submit/${id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ code: code }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                setResults(data)
-                setIsRunning(false)
-            })
-            .catch(error => {
-                console.error('Error submitting solution:', error)
-                setIsRunning(false)
-            })
+                const suggestions = PYTHON_KEYWORDS.map(key => ({
+                    label: key,
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    insertText: key
+                }));
+                return { suggestions: suggestions };
+            }
+        });
     }
 
+    useEffect(() => {
+        // ... (existing code)
+        // ...
+        // Note: I will need to handle the big gap in the replacement if I do it all at once.
+        // Let's split it.
+        // This tool call will fail if I don't provide contiguous content or use multiple chunks.
+        // I will use two tool calls or one multi_replace if available, but I only have replace_file_content (single block) or multi_replace.
+        // I should use multi_replace if I want to edit disjoint parts.
+        // Let's check my tools. yes default_api:multi_replace_file_content is available.
+
+        axios.get(`http://127.0.0.1:8000/problems/${id}`)
+            .then(response => {
+                setProblem(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching problem:', error);
+                setLoading(false);
+                toast.error('Failed to load problem');
+            });
+    }, [id]);
+
+    const handleRun = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('You must be logged in to run code!');
+            return;
+        }
+
+        setOutput('');
+        setError('');
+        toast.loading('Running code...', { id: 'run-code' });
+
+        try {
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+
+            const response = await axios.post('http://127.0.0.1:8000/run', {
+                code: code,
+                input_data: customInput
+            }, config);
+
+            const data = response.data;
+            toast.dismiss('run-code');
+
+            if (data.error) {
+                toast.error('Execution Error');
+                setError(data.error);
+            } else {
+                toast.success('Code executed!');
+                setOutput(data.output);
+            }
+
+        } catch (err) {
+            console.error('Run error:', err);
+            toast.dismiss('run-code');
+            if (err.response && err.response.status === 401) {
+                // Interceptor handles redirect, but we can show toast
+                toast.error('Session expired');
+            } else {
+                toast.error('Failed to execute code');
+            }
+        }
+    };
+
+    const handleSubmit = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('You must be logged in to submit!');
+            return;
+        }
+
+        setOutput('');
+        setError('');
+        toast.loading('Submitting solution...', { id: 'submit-code' });
+
+        try {
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+
+            const response = await axios.post(`http://127.0.0.1:8000/submit`, {
+                code: code,
+                problem_id: parseInt(id)
+            }, config);
+
+            const data = response.data;
+            toast.dismiss('submit-code');
+
+            if (data.status === 'Accepted') {
+                toast.success('✅ Accepted! Great job!', { duration: 5000 });
+                setOutput('Accepted\nAll test cases passed!');
+            } else if (data.status === 'Wrong Answer') {
+                toast.error('❌ Wrong Answer');
+                setError(`${data.details}`);
+            } else if (data.status === 'Runtime Error') {
+                toast.error('⚠️ Runtime Error');
+                setError(data.details);
+            } else {
+                toast.error('Submission Failed');
+                setError(JSON.stringify(data));
+            }
+
+        } catch (err) {
+            console.error('Submit error:', err);
+            toast.dismiss('submit-code');
+            if (err.response && err.response.status === 401) {
+                toast.error('Session expired');
+            } else {
+                toast.error('Failed to submit code');
+            }
+        }
+    };
+
+    const navigate = useNavigate();
+    const userEmail = localStorage.getItem('email');
+    const isAdmin = userEmail === 'denis@student.upt.ro';
+
+    const handleDelete = async () => {
+        if (window.confirm('Are you sure you want to delete this problem?')) {
+            const token = localStorage.getItem('token');
+            try {
+                await axios.delete(`http://127.0.0.1:8000/problems/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                toast.success('Problem deleted');
+                navigate('/');
+            } catch (error) {
+                console.error('Delete error:', error);
+                toast.error('Failed to delete problem');
+            }
+        }
+    };
+
+    // ... (existing helper) ...
     const getDifficultyColor = (difficulty) => {
         switch (difficulty) {
-            case 'Easy': return 'bg-green-100 text-green-700'
-            case 'Medium': return 'bg-yellow-100 text-yellow-700'
-            case 'Hard': return 'bg-red-100 text-red-700'
-            default: return 'bg-gray-100 text-gray-700'
+            case 'Easy': return 'bg-green-100 text-green-700';
+            case 'Medium': return 'bg-yellow-100 text-yellow-700';
+            case 'Hard': return 'bg-red-100 text-red-700';
+            default: return 'bg-gray-100 text-gray-700';
         }
-    }
+    };
 
-    if (loading) return <div className="text-center py-20 text-gray-500">Loading...</div>
-    if (!problem) return <div className="text-center py-20 text-red-500">Problem not found</div>
-
-    const allPassed = results && results.every(r => r.passed)
+    if (loading) return <div className="text-center py-20 text-gray-500">Loading...</div>;
+    if (!problem) return <div className="text-center py-20 text-red-500">Problem not found</div>;
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 h-[calc(100vh-4rem)]">
@@ -85,92 +203,102 @@ function ProblemPage() {
                             {problem.difficulty}
                         </span>
                     </div>
+
+                    {isAdmin && (
+                        <div className="flex gap-2 mb-4">
+                            <button
+                                onClick={() => navigate(`/edit-problem/${id}`)}
+                                className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm font-medium transition-colors"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
+
                     <div className="prose prose-slate text-gray-700 leading-relaxed mt-6">
                         <p className="whitespace-pre-wrap">{problem.description}</p>
                     </div>
                 </div>
 
-                {/* Right Column: Editor & Controls */}
+                {/* Right Column: Editor & Output */}
                 <div className="flex flex-col h-full lg:col-span-2">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center cursor-pointer space-x-2">
+                            <input
+                                type="checkbox"
+                                checked={isAutocompleteEnabled}
+                                onChange={(e) => setIsAutocompleteEnabled(e.target.checked)}
+                                className="form-checkbox h-4 w-4 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 transition duration-150 ease-in-out"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Enable Autocomplete</span>
+                        </label>
+                    </div>
+
                     <div className="flex-grow rounded-2xl overflow-hidden shadow-sm border border-gray-200 h-[60vh]">
                         <Editor
+                            onMount={handleEditorDidMount}
                             height="100%"
                             defaultLanguage="python"
                             value={code}
-                            onChange={(value) => setCode(value)}
+                            onChange={(value) => setCode(value || '')}
                             theme="vs-dark"
                             options={{
                                 minimap: { enabled: false },
-                                fontSize: 14,
+                                fontSize: 16,
+                                quickSuggestions: isAutocompleteEnabled,
+                                suggestOnTriggerCharacters: isAutocompleteEnabled,
+                                parameterHints: { enabled: true },
+                                wordBasedSuggestions: false,
                                 padding: { top: 16 }
                             }}
                         />
                     </div>
 
                     <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isRunning}
-                            className={`w-full font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition ${isRunning
-                                ? 'bg-gray-400 cursor-not-allowed text-white'
-                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
-                                }`}
-                        >
-                            {isRunning ? 'Running Tests...' : 'Run Code'}
-                        </button>
+                        {/* Custom Input Section */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Custom Input (for testing)
+                            </label>
+                            <textarea
+                                value={customInput}
+                                onChange={(e) => setCustomInput(e.target.value)}
+                                placeholder="Enter input data here (e.g. for input() calls)"
+                                className="w-full p-2 bg-slate-900 text-white font-mono rounded-md border border-slate-700 h-24 resize-none focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            />
+                        </div>
 
-                        {results && (
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleRun}
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/20"
+                            >
+                                Run Code
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-purple-600/20"
+                            >
+                                Submit Solution
+                            </button>
+                        </div>
+
+                        {/* ... Output Section ... */}
+                        {(output || error) && (
                             <div className="mt-6 animate-fade-in">
-                                {allPassed ? (
-                                    <div className="p-4 bg-emerald-50 text-emerald-700 rounded-lg mb-4 text-center font-bold border border-emerald-100">
-                                        🎉 Problem Solved! All tests passed.
-                                    </div>
-                                ) : (
-                                    <div className="p-4 bg-red-50 text-red-700 rounded-lg mb-4 text-center font-bold border border-red-100">
-                                        ❌ Some tests failed. Keep trying!
-                                    </div>
-                                )}
-
                                 <div className="bg-slate-900 rounded-lg overflow-hidden">
                                     <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 text-gray-400 text-xs font-mono uppercase tracking-wider">
-                                        Test Results
+                                        Output
                                     </div>
-                                    <div className="p-4 overflow-x-auto">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="text-gray-500 text-sm border-b border-slate-700">
-                                                    <th className="py-2 px-4">Status</th>
-                                                    <th className="py-2 px-4">Details</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="font-mono text-sm">
-                                                {results.map((result) => (
-                                                    <tr key={result.test_id} className="border-b border-slate-800 last:border-0">
-                                                        <td className="py-3 px-4">
-                                                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${result.passed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-                                                                }`}>
-                                                                {result.passed ? 'PASS' : 'FAIL'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="py-3 px-4 text-gray-300">
-                                                            {!result.passed && (
-                                                                <div className="space-y-1">
-                                                                    {result.error ? (
-                                                                        <span className="text-red-400">Error: {result.error}</span>
-                                                                    ) : (
-                                                                        <>
-                                                                            <div className="text-gray-500">Expected: <span className="text-emerald-400">{result.expected}</span></div>
-                                                                            <div className="text-gray-500">Actual: <span className="text-red-400">{result.actual}</span></div>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                            {result.passed && <span className="text-gray-500">Output matches expected result</span>}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                    <div className="p-4 font-mono text-sm overflow-x-auto">
+                                        {output && <pre className="text-emerald-400 whitespace-pre-wrap">{output}</pre>}
+                                        {error && <pre className="text-red-400 whitespace-pre-wrap">{error}</pre>}
                                     </div>
                                 </div>
                             </div>
@@ -179,7 +307,7 @@ function ProblemPage() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
-export default ProblemPage
+export default ProblemPage;

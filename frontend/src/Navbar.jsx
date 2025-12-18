@@ -1,53 +1,65 @@
-import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 function Navbar() {
-    const email = localStorage.getItem('user_email')
-    const [isAdmin, setIsAdmin] = useState(false)
+    const location = useLocation();
+    const navigate = useNavigate();
+    const isLoggedIn = !!localStorage.getItem('token');
+    const email = localStorage.getItem('email') || localStorage.getItem('user_email') || 'User';
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        const token = localStorage.getItem('token')
+        // ... (existing useEffect logic)
+        const token = localStorage.getItem('token');
         if (token) {
-            fetch('http://127.0.0.1:8000/users/me', {
+            axios.get('http://127.0.0.1:8000/users/me', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.is_admin) {
-                        setIsAdmin(true)
+                .then(res => {
+                    if (res.data.is_admin) {
+                        setIsAdmin(true);
                     }
                 })
-                .catch(err => console.error("Error fetching user details:", err))
+                .catch(err => console.error("Error fetching user details:", err));
+        } else {
+            setIsAdmin(false);
         }
-    }, [])
+    }, [isLoggedIn]);
 
     const handleLogout = () => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user_email')
-        window.location.reload()
-    }
+        localStorage.removeItem('token');
+        localStorage.removeItem('email');
+        localStorage.removeItem('user_email');
+        navigate('/login');
+    };
 
     return (
         <nav className="bg-emerald-600 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-8">
-                        <Link to="/" className="text-white font-bold text-xl">PyCode Arena</Link>
+                        <Link to={isLoggedIn ? "/" : "/"} className="text-white font-bold text-xl">PyCode Arena</Link>
                         <div className="flex items-baseline space-x-4">
-                            <Link to="/" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</Link>
-                            {email && (
+                            {isLoggedIn && (
+                                <Link to="/" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</Link>
+                            )}
+                            {isLoggedIn && (
                                 <Link to="/profile" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Profile</Link>
                             )}
-                            {isAdmin && (
+                            {isLoggedIn && (
+                                <Link to="/leaderboard" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Leaderboard</Link>
+                            )}
+                            {isLoggedIn && isAdmin && (
                                 <Link to="/add-problem" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">New Problem</Link>
                             )}
                         </div>
                     </div>
 
                     <div className="flex items-center">
-                        {email ? (
+                        {isLoggedIn ? (
                             <>
                                 <span className="text-emerald-100 text-sm mr-4">Hello, {email}</span>
                                 <button
@@ -64,7 +76,7 @@ function Navbar() {
                 </div>
             </div>
         </nav>
-    )
+    );
 }
 
-export default Navbar
+export default Navbar;

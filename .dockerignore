@@ -1,0 +1,4 @@
+**/node_modules
+frontend/node_modules
+app/__pycache__
+*.db

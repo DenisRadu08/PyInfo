@@ -1,0 +1,19 @@
+# Folosim versiunea 20 (mai nouă și stabilă)
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copiem doar fișierul de configurare
+COPY frontend/package.json ./
+
+# Instalăm dependențele
+RUN npm install
+
+# Copiem restul fișierelor
+COPY frontend/ .
+
+# Expunem portul
+EXPOSE 5173
+
+# Pornim direct Vite cu acces de oriunde (--host)
+CMD ["npx", "vite", "--host"]
