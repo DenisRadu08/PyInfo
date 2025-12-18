@@ -1,10 +1,13 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt
+import os
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-SECRET_KEY = "supersecretkeythatshouldbechangedinproduction"
+# SECURITY WARNING: This fallback key is for development convenience only.
+# In production, this must be overridden by an environment variable.
+SECRET_KEY = os.getenv("SECRET_KEY", "cheie-de-rezerva-pentru-dezvoltare-locala-123")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 240
 

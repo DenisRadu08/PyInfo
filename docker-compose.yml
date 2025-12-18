@@ -9,6 +9,10 @@ services:
       - "8000:8000"
     volumes:
       - ./sql_app.db:/app/sql_app.db
+    environment:
+      - SECRET_KEY=supersecretkeythatshouldbechangedinproduction
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=240
 
   frontend:
     build:
@@ -18,3 +22,5 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000
