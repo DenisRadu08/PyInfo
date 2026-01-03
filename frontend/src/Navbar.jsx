@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from './api/axios';
 
 function Navbar() {
     const location = useLocation();
@@ -10,14 +10,9 @@ function Navbar() {
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        // ... (existing useEffect logic)
         const token = localStorage.getItem('token');
         if (token) {
-            axios.get('http://127.0.0.1:8000/users/me', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
+            api.get('/users/me')
                 .then(res => {
                     if (res.data.is_admin) {
                         setIsAdmin(true);

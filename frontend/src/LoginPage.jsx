@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import axios from 'axios'
+import api from './api/axios'
+import { Link } from 'react-router-dom'
 
 
 function LoginPage() {
@@ -17,7 +18,7 @@ function LoginPage() {
         formData.append('password', password)
 
         try {
-            const response = await axios.post('http://127.0.0.1:8000/token', formData, {
+            const response = await api.post('/token', formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
@@ -75,6 +76,11 @@ function LoginPage() {
                         Login
                     </button>
                 </form>
+                <div className="text-center mt-4">
+                    <Link to="/register" className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
+                        Don't have an account? Register
+                    </Link>
+                </div>
             </div>
         </div>
     )

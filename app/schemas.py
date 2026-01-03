@@ -16,6 +16,7 @@ class TestCase(TestCaseBase):
         from_attributes = True
 
 class UserBase(BaseModel):
+    username: str
     email: str
 
 class UserCreate(UserBase):

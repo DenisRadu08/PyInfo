@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from './api/axios';
 import Skeleton from './components/Skeleton';
 
 function HomePage() {
@@ -11,12 +11,7 @@ function HomePage() {
     const [filterDifficulty, setFilterDifficulty] = useState('All')
 
     useEffect(() => {
-        const token = localStorage.getItem('token')
-        const config = {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        }
-
-        axios.get('http://127.0.0.1:8000/problems', config)
+        api.get('/problems')
             .then(response => {
                 setProblems(response.data)
                 setFilteredProblems(response.data)

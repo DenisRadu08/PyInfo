@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import axios from 'axios'
+import api from './api/axios'
 
 import toast from 'react-hot-toast'
 
@@ -16,7 +16,7 @@ function AddProblemPage() {
     useEffect(() => {
         if (id) {
             setLoading(true)
-            axios.get(`http://127.0.0.1:8000/problems/${id}`)
+            api.get(`/problems/${id}`)
                 .then(res => {
                     const problem = res.data
                     setTitle(problem.title)
@@ -71,27 +71,27 @@ function AddProblemPage() {
         try {
             if (id) {
                 // UPDATE
-                await axios.put(`http://127.0.0.1:8000/problems/${id}`, {
+                await api.put(`/problems/${id}`, {
                     title,
                     description,
                     difficulty,
                     test_cases: testCases
-                }, config)
+                })
                 toast.success('Problem updated successfully!')
                 navigate(`/problem/${id}`)
             } else {
                 // CREATE
                 // 1. Create Problem
-                const problemRes = await axios.post('http://127.0.0.1:8000/problems', {
+                const problemRes = await api.post('/problems', {
                     title, description, difficulty
-                }, config)
+                })
 
                 const problem = problemRes.data
 
                 // 2. Add Test Cases
                 for (const test of testCases) {
                     if (test.input_data && test.expected_output) {
-                        await axios.post(`http://127.0.0.1:8000/problems/${problem.id}/tests`, test, config)
+                        await api.post(`/problems/${problem.id}/tests`, test)
                     }
                 }
                 toast.success('Problem added successfully!')

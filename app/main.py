@@ -13,11 +13,13 @@ app = FastAPI()
 
 origins = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins,  # Explicit list, NO wildcard "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,26 +28,21 @@ app.add_middleware(
 app.include_router(problems.router)
 app.include_router(users.router)
 
+from app.services.code_executor import execute_code
+
 @app.post("/run")
 async def run_code(submission: schemas.CodeSubmission):
-    try:
-        process = subprocess.Popen(
-            [sys.executable, "-c", submission.code],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        
-        input_str = submission.input_data if submission.input_data else ""
-        stdout, stderr = process.communicate(input=input_str, timeout=3)
-        
-        return {"output": stdout, "error": stderr}
-    except subprocess.TimeoutExpired:
-        process.kill()
-        return {"output": "", "error": "Execution timed out"}
-    except Exception as e:
-        return {"output": "", "error": str(e)}
+    result = execute_code(
+        code=submission.code,
+        input_data=submission.input_data if submission.input_data else "",
+        timeout=2.0
+    )
+    
+    # Adapt the result for the frontend
+    return {
+        "output": result["output"],
+        "error": result["error"] if result["status"] == "Accepted" or result["status"] == "Runtime Error" else result["status"]
+    }
 
 @app.post("/problems/{problem_id}/tests", response_model=schemas.TestCase)
 async def create_test_case(problem_id: int, test_case: schemas.TestCaseCreate, db: Session = Depends(get_db)):
@@ -54,11 +51,6 @@ async def create_test_case(problem_id: int, test_case: schemas.TestCaseCreate, d
     db.commit()
     db.refresh(db_test_case)
     return db_test_case
-
-
-
-
-import json
 
 @app.post("/submit")
 async def submit_code(
@@ -73,58 +65,54 @@ async def submit_code(
     
     # 2. Iterate through test cases
     for test in problem.test_cases:
-        try:
-            # 3. Run user code using subprocess.Popen (Binary Mode)
-            process = subprocess.Popen(
-                [sys.executable, "-c", submission.code],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                # text=False means we work with bytes
-            )
-            
-            # Write input (encoded) and get output (binary)
-            input_bytes = test.input_data.encode()
-            stdout, stderr = process.communicate(input=input_bytes, timeout=2)
-            
-            # 4. Compare results
-            # Clean actual: decode -> strip
-            actual = stdout.decode().strip()
-            # Clean expected: strip
-            expected = test.expected_output.strip()
-            
-            if actual != expected:
-                # Log failure
-                db_submission = models.Submission(
-                    code=submission.code,
-                    status="Wrong Answer",
-                    user_id=current_user.id,
-                    problem_id=submission.problem_id
-                )
-                db.add(db_submission)
-                db.commit()
-                
-                return {
-                    "status": "Wrong Answer", 
-                    "details": f"Failed on input: {test.input_data}. Expected: {expected}, Got: {actual}"
-                }
-
-        except subprocess.TimeoutExpired:
-            process.kill()
+        # 3. Run user code using execution service
+        result = execute_code(
+            code=submission.code, 
+            input_data=test.input_data,
+            timeout=2.0
+        )
+        
+        # 4. Check Execution Status
+        if result["status"] != "Accepted":
+             # Log failure (TLE, MLE, Runtime Error)
             db_submission = models.Submission(
                 code=submission.code,
-                status="Time Limit Exceeded",
+                status=result["status"], # e.g., "Time Limit Exceeded"
                 user_id=current_user.id,
                 problem_id=submission.problem_id
             )
             db.add(db_submission)
             db.commit()
-            return {"status": "Runtime Error", "details": "Time Limit Exceeded"}
             
-        except Exception as e:
-            return {"status": "Runtime Error", "details": str(e)}
+            return {
+                "status": "Runtime Error" if result["status"] == "Runtime Error" else result["status"], 
+                "details": result["error"] if result["error"] else result["status"]
+            }
 
-    # 5. All passed
+        # 5. Compare Logic
+        def normalize_output(text):
+            return "\n".join([line.rstrip() for line in text.strip().splitlines()])
+
+        actual = normalize_output(result["output"])
+        expected = normalize_output(test.expected_output)
+        
+        if actual != expected:
+            # Log failure (Wrong Answer)
+            db_submission = models.Submission(
+                code=submission.code,
+                status="Wrong Answer",
+                user_id=current_user.id,
+                problem_id=submission.problem_id
+            )
+            db.add(db_submission)
+            db.commit()
+            
+            return {
+                "status": "Wrong Answer", 
+                "details": f"Failed on input: {test.input_data}. Expected: {expected}, Got: {actual}"
+            }
+
+    # 6. All passed
     db_submission = models.Submission(
         code=submission.code,
         status="Accepted",
@@ -148,18 +136,13 @@ async def delete_problem(problem_id: int, db: Session = Depends(get_db)):
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    # 2. Manually delete related data first (Foreign Key handling)
-    # Delete Submissions
-    db.query(models.Submission).filter(models.Submission.problem_id == problem_id).delete()
-    
-    # Delete TestCases
-    db.query(models.TestCase).filter(models.TestCase.problem_id == problem_id).delete()
-    
-    # 3. Delete the Problem
+    # 2. Deleting the problem trigger cascade delete for Submissions and TestCases
     db.delete(problem)
     db.commit()
     
     return {"message": "Problem deleted"}
+    
+
 
 @app.put("/problems/{problem_id}", response_model=schemas.Problem)
 async def update_problem(problem_id: int, problem_update: schemas.ProblemCreate, db: Session = Depends(get_db)):

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from './api/axios'
 import toast from 'react-hot-toast'
 
 function LeaderboardPage() {
@@ -9,13 +9,7 @@ function LeaderboardPage() {
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const token = localStorage.getItem('token')
-                const config = {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-                const response = await axios.get('http://127.0.0.1:8000/leaderboard', config)
+                const response = await api.get('/leaderboard')
                 setLeaderboard(response.data)
                 setLoading(false)
             } catch (error) {

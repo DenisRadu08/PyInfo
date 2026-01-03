@@ -10,8 +10,8 @@ class Problem(Base):
     description = Column(Text)
     difficulty = Column(String)
 
-    test_cases = relationship("TestCase", back_populates="problem")
-    submissions = relationship("Submission", back_populates="problem")
+    test_cases = relationship("TestCase", back_populates="problem", cascade="all, delete-orphan")
+    submissions = relationship("Submission", back_populates="problem", cascade="all, delete-orphan")
 
 class TestCase(Base):
     __tablename__ = "test_cases"
@@ -27,6 +27,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Integer, default=True)

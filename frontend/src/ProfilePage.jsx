@@ -3,7 +3,7 @@ import Skeleton from './components/Skeleton'
 import toast from 'react-hot-toast'
 import CalendarHeatmap from 'react-calendar-heatmap'
 import { Tooltip as ReactTooltip } from 'react-tooltip'
-import axios from 'axios'
+import api from './api/axios'
 import 'react-calendar-heatmap/dist/styles.css'
 
 function ProfilePage() {
@@ -13,34 +13,27 @@ function ProfilePage() {
     const [viewDate, setViewDate] = useState(new Date())
 
     useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            setLoading(false)
-            return
-        }
-
-        const config = {
-            headers: {
-                'Authorization': `Bearer ${token}`
+        const fetchProfileData = async () => {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                setLoading(false)
+                return
             }
-        }
 
-        // Fetch Submissions and User Data in parallel
-        Promise.all([
-            axios.get('http://127.0.0.1:8000/my-submissions', config),
-            axios.get('http://127.0.0.1:8000/users/me', config)
-        ])
-            .then(([submissionsRes, userRes]) => {
+            try {
+                const [submissionsRes, userRes] = await Promise.all([
+                    api.get('/my-submissions'),
+                    api.get('/users/me')
+                ])
                 setSubmissions(submissionsRes.data)
                 setUserData(userRes.data)
                 setLoading(false)
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error fetching profile data:', error)
                 setLoading(false)
-                // Error handled by global interceptor if 401
-            })
-
+            }
+        }
+        fetchProfileData()
     }, [])
 
     const getStartDate = () => {

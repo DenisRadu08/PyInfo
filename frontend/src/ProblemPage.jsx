@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Editor from '@monaco-editor/react';
-import axios from 'axios';
+import api from './api/axios';
 
 const PYTHON_KEYWORDS = [
     'def', 'class', 'import', 'return', 'if', 'else', 'while', 'for',
@@ -17,6 +17,13 @@ function ProblemPage() {
     const [output, setOutput] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+
+    // UI State for visual feedback
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    // INSTANT LOCK (Ref updates are synchronous)
+    const processingRef = useRef(false);
+
     const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(true);
     const autocompleteRef = useRef(isAutocompleteEnabled);
 
@@ -41,16 +48,7 @@ function ProblemPage() {
     }
 
     useEffect(() => {
-        // ... (existing code)
-        // ...
-        // Note: I will need to handle the big gap in the replacement if I do it all at once.
-        // Let's split it.
-        // This tool call will fail if I don't provide contiguous content or use multiple chunks.
-        // I will use two tool calls or one multi_replace if available, but I only have replace_file_content (single block) or multi_replace.
-        // I should use multi_replace if I want to edit disjoint parts.
-        // Let's check my tools. yes default_api:multi_replace_file_content is available.
-
-        axios.get(`http://127.0.0.1:8000/problems/${id}`)
+        api.get(`/problems/${id}`)
             .then(response => {
                 setProblem(response.data);
                 setLoading(false);
@@ -63,113 +61,138 @@ function ProblemPage() {
     }, [id]);
 
     const handleRun = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error('You must be logged in to run code!');
-            return;
-        }
+        // 1. INSTANT GUARD
+        if (processingRef.current) return;
 
+        // 2. LOCK
+        processingRef.current = true;
+        setIsProcessing(true);
+        const startTime = Date.now(); // Start timer
+
+        // 3. CLEANUP UI
         setOutput('');
         setError('');
-        toast.loading('Running code...', { id: 'run-code' });
+        toast.dismiss(); // Clear previous toasts
+        const toastId = toast.loading('Running code...');
 
         try {
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('You must be logged in to run code!', { id: toastId });
+                return;
             }
 
-            const response = await axios.post('http://127.0.0.1:8000/run', {
+            // 4. EXECUTE (Natural Await)
+            const response = await api.post('/run', {
                 code: code,
                 input_data: customInput
-            }, config);
+            });
 
             const data = response.data;
-            toast.dismiss('run-code');
 
             if (data.error) {
-                toast.error('Execution Error');
+                toast.error('Execution Error', { id: toastId });
                 setError(data.error);
             } else {
-                toast.success('Code executed!');
+                toast.success('Code executed!', { id: toastId });
                 setOutput(data.output);
             }
 
         } catch (err) {
             console.error('Run error:', err);
-            toast.dismiss('run-code');
             if (err.response && err.response.status === 401) {
-                // Interceptor handles redirect, but we can show toast
-                toast.error('Session expired');
+                toast.error('Session expired', { id: toastId });
             } else {
-                toast.error('Failed to execute code');
+                toast.error('Failed to execute code', { id: toastId });
             }
+        } finally {
+            // 5. GUARANTEED DELAY (The "Finally" Trap)
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = 500 - elapsedTime;
+            if (remainingTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
+
+            // 6. UNLOCK
+            processingRef.current = false;
+            setIsProcessing(false);
         }
     };
 
     const handleSubmit = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error('You must be logged in to submit!');
-            return;
-        }
+        // 1. INSTANT GUARD
+        if (processingRef.current) return;
 
+        // 2. LOCK
+        processingRef.current = true;
+        setIsProcessing(true);
+        const startTime = Date.now(); // Start timer
+
+        // 3. CLEANUP UI
         setOutput('');
         setError('');
-        toast.loading('Submitting solution...', { id: 'submit-code' });
+        toast.dismiss();
+        const toastId = toast.loading('Submitting solution...');
 
         try {
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('You must be logged in to submit!', { id: toastId });
+                return;
             }
 
-            const response = await axios.post(`http://127.0.0.1:8000/submit`, {
+            // 4. EXECUTE (Natural Await)
+            const response = await api.post(`/submit`, {
                 code: code,
                 problem_id: parseInt(id)
-            }, config);
+            });
 
             const data = response.data;
-            toast.dismiss('submit-code');
 
             if (data.status === 'Accepted') {
-                toast.success('✅ Accepted! Great job!', { duration: 5000 });
+                toast.success('✅ Accepted! Great job!', { id: toastId, duration: 4000 });
                 setOutput('Accepted\nAll test cases passed!');
             } else if (data.status === 'Wrong Answer') {
-                toast.error('❌ Wrong Answer');
+                toast.error('❌ Wrong Answer', { id: toastId });
                 setError(`${data.details}`);
             } else if (data.status === 'Runtime Error') {
-                toast.error('⚠️ Runtime Error');
+                toast.error('⚠️ Runtime Error', { id: toastId });
                 setError(data.details);
             } else {
-                toast.error('Submission Failed');
+                toast.error('Submission Failed', { id: toastId });
                 setError(JSON.stringify(data));
             }
 
         } catch (err) {
             console.error('Submit error:', err);
-            toast.dismiss('submit-code');
             if (err.response && err.response.status === 401) {
-                toast.error('Session expired');
+                toast.error('Session expired', { id: toastId });
             } else {
-                toast.error('Failed to submit code');
+                toast.error('Failed to submit code', { id: toastId });
             }
+        } finally {
+            // 5. GUARANTEED DELAY (The "Finally" Trap)
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = 500 - elapsedTime;
+            if (remainingTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
+
+            // 6. UNLOCK
+            processingRef.current = false;
+            setIsProcessing(false);
         }
     };
 
     const navigate = useNavigate();
     const userEmail = localStorage.getItem('email');
+    // Admin check hardcoded temporarily for safety/testing
     const isAdmin = userEmail === 'denis@student.upt.ro';
 
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to delete this problem?')) {
-            const token = localStorage.getItem('token');
             try {
-                await axios.delete(`http://127.0.0.1:8000/problems/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.delete(`/problems/${id}`);
                 toast.success('Problem deleted');
                 navigate('/');
             } catch (error) {
@@ -179,7 +202,6 @@ function ProblemPage() {
         }
     };
 
-    // ... (existing helper) ...
     const getDifficultyColor = (difficulty) => {
         switch (difficulty) {
             case 'Easy': return 'bg-green-100 text-green-700';
@@ -274,18 +296,20 @@ function ProblemPage() {
                             />
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-4" style={{ pointerEvents: isProcessing ? 'none' : 'auto' }}>
                             <button
                                 onClick={handleRun}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/20"
+                                disabled={isProcessing || loading}
+                                className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/20 ${isProcessing || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Run Code
+                                {isProcessing ? 'Running...' : 'Run Code'}
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-purple-600/20"
+                                disabled={isProcessing || loading}
+                                className={`flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-purple-600/20 ${isProcessing || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Submit Solution
+                                {isProcessing ? 'Submitting...' : 'Submit Solution'}
                             </button>
                         </div>
 
