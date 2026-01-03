@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -75,3 +76,46 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @router.get("/my-submissions")
 async def read_users_submissions(current_user: models.User = Depends(dependencies.get_current_user)):
     return current_user.submissions
+
+@router.get("/users/all", response_model=List[schemas.User])
+async def read_all_users(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    users = db.query(models.User).all()
+    return users
+
+SUPER_ADMIN_EMAIL = "denis@student.upt.ro"
+
+@router.put("/users/{user_id}/toggle-admin", response_model=schemas.User)
+async def toggle_admin(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Check if current user is Super Admin
+    if current_user.email != SUPER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Only the Super Admin can change roles")
+    
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot toggle your own admin rights")
+        
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Check immunity: Cannot demote Super Admin
+    if user.email == SUPER_ADMIN_EMAIL:
+        raise HTTPException(status_code=400, detail="Cannot demote the Super Admin")
+
+    # Toggle boolean (or 0/1 integer)
+    user.is_admin = not user.is_admin
+    db.commit()
+    db.refresh(user)
+    return user

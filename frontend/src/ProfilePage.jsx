@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import CalendarHeatmap from 'react-calendar-heatmap'
 import { Tooltip as ReactTooltip } from 'react-tooltip'
 import api from './api/axios'
+import Editor from '@monaco-editor/react'
 import 'react-calendar-heatmap/dist/styles.css'
 
 function ProfilePage() {
@@ -11,6 +12,10 @@ function ProfilePage() {
     const [userData, setUserData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [viewDate, setViewDate] = useState(new Date())
+    const [selectedSubmission, setSelectedSubmission] = useState(null)
+
+    const openSubmission = (code) => setSelectedSubmission(code)
+    const closeSubmission = () => setSelectedSubmission(null)
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -146,9 +151,12 @@ function ProfilePage() {
                 {userData && (
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-full">
                         <div className="h-24 w-24 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold text-4xl mb-4">
-                            {userData.email[0].toUpperCase()}
+                            {userData.username ? userData.username[0].toUpperCase() : userData.email[0].toUpperCase()}
                         </div>
-                        <h2 className="text-xl font-bold text-slate-800 mb-1">{userData.email}</h2>
+                        <h2 className="text-3xl font-bold text-slate-900 mb-1">
+                            {userData.username || 'User'}
+                        </h2>
+                        <p className="text-sm text-gray-500 mb-4">{userData.email}</p>
                         <p className="text-sm text-gray-500 mb-4">Member since {new Date().getFullYear()}</p>
 
                         {userData.is_admin ? (
@@ -264,7 +272,7 @@ function ProfilePage() {
                                         </td>
                                         <td className="p-4">
                                             <button
-                                                onClick={() => alert(sub.code)}
+                                                onClick={() => openSubmission(sub.code)}
                                                 className="text-emerald-600 hover:text-emerald-700 font-medium text-sm hover:underline"
                                             >
                                                 View Code
@@ -277,6 +285,45 @@ function ProfilePage() {
                     </div>
                 )}
             </div>
+
+            {/* Code Modal Overlay */}
+            {selectedSubmission && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+                            <h3 className="text-lg font-bold text-slate-800">Submission Code</h3>
+                            <button
+                                onClick={closeSubmission}
+                                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Body (Editor) */}
+                        <div className="flex-1 p-0 overflow-hidden bg-[#1e1e1e]">
+                            <Editor
+                                height="500px"
+                                language="python"
+                                value={selectedSubmission}
+                                theme="vs-dark"
+                                options={{
+                                    readOnly: true,
+                                    minimap: { enabled: false },
+                                    scrollBeyondLastLine: false,
+                                    fontSize: 14,
+                                    lineNumbers: 'on',
+                                    renderLevel: 'none'
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

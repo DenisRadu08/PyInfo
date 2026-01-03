@@ -8,6 +8,7 @@ function Navbar() {
     const isLoggedIn = !!localStorage.getItem('token');
     const email = localStorage.getItem('email') || localStorage.getItem('user_email') || 'User';
     const [isAdmin, setIsAdmin] = useState(false);
+    const [displayName, setDisplayName] = useState(email);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -16,6 +17,11 @@ function Navbar() {
                 .then(res => {
                     if (res.data.is_admin) {
                         setIsAdmin(true);
+                    }
+                    if (res.data.username) {
+                        setDisplayName(res.data.username);
+                    } else {
+                        setDisplayName(res.data.email);
                     }
                 })
                 .catch(err => console.error("Error fetching user details:", err));
@@ -48,7 +54,10 @@ function Navbar() {
                                 <Link to="/leaderboard" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Leaderboard</Link>
                             )}
                             {isLoggedIn && isAdmin && (
-                                <Link to="/add-problem" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">New Problem</Link>
+                                <>
+                                    <Link to="/add-problem" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">New Problem</Link>
+                                    <Link to="/admin-users" className="text-emerald-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Manage Users</Link>
+                                </>
                             )}
                         </div>
                     </div>
@@ -56,7 +65,7 @@ function Navbar() {
                     <div className="flex items-center">
                         {isLoggedIn ? (
                             <>
-                                <span className="text-emerald-100 text-sm mr-4">Hello, {email}</span>
+                                <span className="text-emerald-100 text-sm mr-4">Hello, {displayName}</span>
                                 <button
                                     onClick={handleLogout}
                                     className="bg-white text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"

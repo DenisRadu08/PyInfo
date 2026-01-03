@@ -5,10 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     volumes:
       - ./sql_app.db:/app/sql_app.db
+      - ./app:/app/app
     env_file:
       - .env
     environment:
@@ -21,6 +23,10 @@ services:
       dockerfile: Dockerfile.frontend
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/vite.config.js:/app/vite.config.js
+      - /app/node_modules
     depends_on:
       - backend
     environment:

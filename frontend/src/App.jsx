@@ -11,6 +11,7 @@ import { Toaster } from 'react-hot-toast'
 import HomePage from './HomePage'
 import ProtectedRoute from './ProtectedRoute'
 import LeaderboardPage from './LeaderboardPage'
+import AdminUsersPage from './AdminUsersPage'
 
 function App() {
   // Global axios interceptor is now handled in api/axios.js
@@ -44,6 +45,11 @@ function App() {
           <Route path="/leaderboard" element={
             <ProtectedRoute>
               <LeaderboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-users" element={
+            <ProtectedRoute>
+              <AdminUsersPage />
             </ProtectedRoute>
           } />
         </Routes>
