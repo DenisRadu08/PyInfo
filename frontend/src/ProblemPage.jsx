@@ -27,6 +27,13 @@ function ProblemPage() {
     const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(true);
     const autocompleteRef = useRef(isAutocompleteEnabled);
 
+    // --- 1. Dictionarul de traducere ---
+    const difficultyMap = {
+        'Easy': 'Ușor',
+        'Medium': 'Mediu',
+        'Hard': 'Greu'
+    };
+
     useEffect(() => {
         autocompleteRef.current = isAutocompleteEnabled;
     }, [isAutocompleteEnabled]);
@@ -61,28 +68,24 @@ function ProblemPage() {
     }, [id]);
 
     const handleRun = async () => {
-        // 1. INSTANT GUARD
         if (processingRef.current) return;
 
-        // 2. LOCK
         processingRef.current = true;
         setIsProcessing(true);
-        const startTime = Date.now(); // Start timer
+        const startTime = Date.now();
 
-        // 3. CLEANUP UI
         setOutput('');
         setError('');
-        toast.dismiss(); // Clear previous toasts
-        const toastId = toast.loading('Running code...');
+        toast.dismiss();
+        const toastId = toast.loading('Se execută...'); // <-- TRADUS
 
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                toast.error('You must be logged in to run code!', { id: toastId });
+                toast.error('Trebuie să fii logat pentru a rula cod!', { id: toastId }); // <-- TRADUS
                 return;
             }
 
-            // 4. EXECUTE (Natural Await)
             const response = await api.post('/run', {
                 code: code,
                 input_data: customInput
@@ -91,57 +94,51 @@ function ProblemPage() {
             const data = response.data;
 
             if (data.error) {
-                toast.error('Execution Error', { id: toastId });
+                toast.error('Eroare de Execuție', { id: toastId }); // <-- TRADUS
                 setError(data.error);
             } else {
-                toast.success('Code executed!', { id: toastId });
+                toast.success('Cod executat!', { id: toastId }); // <-- TRADUS
                 setOutput(data.output);
             }
 
         } catch (err) {
             console.error('Run error:', err);
             if (err.response && err.response.status === 401) {
-                toast.error('Session expired', { id: toastId });
+                toast.error('Sesiune expirată', { id: toastId });
             } else {
-                toast.error('Failed to execute code', { id: toastId });
+                toast.error('Eroare la execuție', { id: toastId });
             }
         } finally {
-            // 5. GUARANTEED DELAY (The "Finally" Trap)
             const elapsedTime = Date.now() - startTime;
             const remainingTime = 500 - elapsedTime;
             if (remainingTime > 0) {
                 await new Promise(resolve => setTimeout(resolve, remainingTime));
             }
 
-            // 6. UNLOCK
             processingRef.current = false;
             setIsProcessing(false);
         }
     };
 
     const handleSubmit = async () => {
-        // 1. INSTANT GUARD
         if (processingRef.current) return;
 
-        // 2. LOCK
         processingRef.current = true;
         setIsProcessing(true);
-        const startTime = Date.now(); // Start timer
+        const startTime = Date.now();
 
-        // 3. CLEANUP UI
         setOutput('');
         setError('');
         toast.dismiss();
-        const toastId = toast.loading('Submitting solution...');
+        const toastId = toast.loading('Se trimite soluția...'); // <-- TRADUS
 
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                toast.error('You must be logged in to submit!', { id: toastId });
+                toast.error('Trebuie să fii logat pentru a trimite!', { id: toastId });
                 return;
             }
 
-            // 4. EXECUTE (Natural Await)
             const response = await api.post(`/submit`, {
                 code: code,
                 problem_id: parseInt(id)
@@ -150,35 +147,33 @@ function ProblemPage() {
             const data = response.data;
 
             if (data.status === 'Accepted') {
-                toast.success('✅ Accepted! Great job!', { id: toastId, duration: 4000 });
-                setOutput('Accepted\nAll test cases passed!');
+                toast.success('✅ Admis! Felicitări!', { id: toastId, duration: 4000 }); // <-- TRADUS
+                setOutput('Admis\nToate testele au trecut cu succes!'); // <-- TRADUS
             } else if (data.status === 'Wrong Answer') {
-                toast.error('❌ Wrong Answer', { id: toastId });
+                toast.error('❌ Răspuns Greșit', { id: toastId }); // <-- TRADUS
                 setError(`${data.details}`);
             } else if (data.status === 'Runtime Error') {
-                toast.error('⚠️ Runtime Error', { id: toastId });
+                toast.error('⚠️ Eroare la Rulare', { id: toastId }); // <-- TRADUS
                 setError(data.details);
             } else {
-                toast.error('Submission Failed', { id: toastId });
+                toast.error('Trimitere Eșuată', { id: toastId }); // <-- TRADUS
                 setError(JSON.stringify(data));
             }
 
         } catch (err) {
             console.error('Submit error:', err);
             if (err.response && err.response.status === 401) {
-                toast.error('Session expired', { id: toastId });
+                toast.error('Sesiune expirată', { id: toastId });
             } else {
-                toast.error('Failed to submit code', { id: toastId });
+                toast.error('Nu s-a putut trimite soluția', { id: toastId });
             }
         } finally {
-            // 5. GUARANTEED DELAY (The "Finally" Trap)
             const elapsedTime = Date.now() - startTime;
             const remainingTime = 500 - elapsedTime;
             if (remainingTime > 0) {
                 await new Promise(resolve => setTimeout(resolve, remainingTime));
             }
 
-            // 6. UNLOCK
             processingRef.current = false;
             setIsProcessing(false);
         }
@@ -186,18 +181,17 @@ function ProblemPage() {
 
     const navigate = useNavigate();
     const userEmail = localStorage.getItem('email');
-    // Admin check hardcoded temporarily for safety/testing
-    const isAdmin = userEmail === 'denis@student.upt.ro';
+    const isAdmin = userEmail === import.meta.env.VITE_SUPER_ADMIN_EMAIL;// TODO: Update based on API check ideally
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this problem?')) {
+        if (window.confirm('Sigur vrei să ștergi această problemă?')) { // <-- TRADUS
             try {
                 await api.delete(`/problems/${id}`);
-                toast.success('Problem deleted');
+                toast.success('Problemă ștearsă');
                 navigate('/');
             } catch (error) {
                 console.error('Delete error:', error);
-                toast.error('Failed to delete problem');
+                toast.error('Nu s-a putut șterge problema');
             }
         }
     };
@@ -211,45 +205,77 @@ function ProblemPage() {
         }
     };
 
-    if (loading) return <div className="text-center py-20 text-gray-500">Loading...</div>;
-    if (!problem) return <div className="text-center py-20 text-red-500">Problem not found</div>;
+    if (loading) return <div className="text-center py-20 text-gray-500">Se încarcă...</div>;
+    if (!problem) return <div className="text-center py-20 text-red-500">Problema nu a fost găsită</div>;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 h-[calc(100vh-4rem)]">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
-                {/* Left Column: Description */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-y-auto lg:col-span-1">
-                    <div className="flex items-center justify-between mb-4">
-                        <h1 className="text-2xl font-bold text-slate-900">{problem.title}</h1>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(problem.difficulty)}`}>
-                            {problem.difficulty}
-                        </span>
+        <div className="max-w-7xl mx-auto px-4 py-8 min-h-screen">
+            <div className="flex flex-col gap-6">
+                {/* 1. Header Section */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                            <h1 className="text-3xl font-bold text-slate-900 mb-2">{problem.title}</h1>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(problem.difficulty)}`}>
+                                    {/* 2. TRADUCERE DIFICULTATE */}
+                                    {difficultyMap[problem.difficulty]}
+                                </span>
+                                {problem.tags && problem.tags.map(tag => (
+                                    <span key={tag.id} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs font-medium border border-slate-200">
+                                        {tag.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {isAdmin && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => navigate(`/edit-problem/${id}`)}
+                                    className="px-4 py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                                >
+                                    Editează
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                                >
+                                    Șterge
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {isAdmin && (
-                        <div className="flex gap-2 mb-4">
-                            <button
-                                onClick={() => navigate(`/edit-problem/${id}`)}
-                                className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm font-medium transition-colors"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="prose prose-slate text-gray-700 leading-relaxed mt-6">
+                    <div className="prose prose-slate max-w-none text-gray-700 leading-relaxed">
                         <p className="whitespace-pre-wrap">{problem.description}</p>
                     </div>
+
+                    {problem.hint && (
+                        <div className="mt-8">
+                            <details className="group bg-amber-50 border border-amber-200 rounded-lg overflow-hidden transition-all duration-300">
+                                <summary className="flex items-center justify-between p-4 cursor-pointer select-none text-amber-800 font-medium hover:bg-amber-100 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                        </svg>
+                                        {/* 3. TRADUCERE HINT */}
+                                        <span>Arată Indiciu 💡</span>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-600 transform group-open:rotate-180 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </summary>
+                                <div className="p-4 pt-0 text-amber-900 text-sm whitespace-pre-wrap border-t border-amber-200/50">
+                                    {problem.hint}
+                                </div>
+                            </details>
+                        </div>
+                    )}
                 </div>
 
-                {/* Right Column: Editor & Output */}
-                <div className="flex flex-col h-full lg:col-span-2">
+                {/* 2. Editor & Output Section */}
+                <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center cursor-pointer space-x-2">
                             <input
@@ -258,7 +284,8 @@ function ProblemPage() {
                                 onChange={(e) => setIsAutocompleteEnabled(e.target.checked)}
                                 className="form-checkbox h-4 w-4 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 transition duration-150 ease-in-out"
                             />
-                            <span className="text-sm font-medium text-gray-700">Enable Autocomplete</span>
+                            {/* 4. TRADUCERE AUTOCOMPLETE */}
+                            <span className="text-sm font-medium text-gray-700">Activează Completarea Automată</span>
                         </label>
                     </div>
 
@@ -285,13 +312,14 @@ function ProblemPage() {
                     <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
                         {/* Custom Input Section */}
                         <div className="mb-4">
+                            {/* 5. TRADUCERE INPUT */}
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Custom Input (for testing)
+                                Date de Intrare (pentru testare manuală)
                             </label>
                             <textarea
                                 value={customInput}
                                 onChange={(e) => setCustomInput(e.target.value)}
-                                placeholder="Enter input data here (e.g. for input() calls)"
+                                placeholder="Introdu datele de intrare aici (ex. pentru funcția input())..."
                                 className="w-full p-2 bg-slate-900 text-white font-mono rounded-md border border-slate-700 h-24 resize-none focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                             />
                         </div>
@@ -302,14 +330,16 @@ function ProblemPage() {
                                 disabled={isProcessing || loading}
                                 className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/20 ${isProcessing || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                {isProcessing ? 'Running...' : 'Run Code'}
+                                {/* 6. TRADUCERE BUTON RUN */}
+                                {isProcessing ? 'Se execută...' : 'Rulează Cod'}
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={isProcessing || loading}
                                 className={`flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg shadow-purple-600/20 ${isProcessing || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                {isProcessing ? 'Submitting...' : 'Submit Solution'}
+                                {/* 7. TRADUCERE BUTON SUBMIT */}
+                                {isProcessing ? 'Se trimite...' : 'Trimite Soluția'}
                             </button>
                         </div>
 
@@ -318,7 +348,8 @@ function ProblemPage() {
                             <div className="mt-6 animate-fade-in">
                                 <div className="bg-slate-900 rounded-lg overflow-hidden">
                                     <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 text-gray-400 text-xs font-mono uppercase tracking-wider">
-                                        Output
+                                        {/* 8. TRADUCERE OUTPUT HEADER */}
+                                        Rezultat
                                     </div>
                                     <div className="p-4 font-mono text-sm overflow-x-auto">
                                         {output && <pre className="text-emerald-400 whitespace-pre-wrap">{output}</pre>}

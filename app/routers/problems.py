@@ -47,8 +47,18 @@ async def get_problems(
 async def create_problem(problem: schemas.ProblemCreate, db: Session = Depends(get_db)):
     problem_data = problem.dict()
     test_cases_data = problem_data.pop('test_cases', [])
+    tags_data = problem_data.pop('tags', [])
     
     db_problem = models.Problem(**problem_data)
+    
+    # Handle Tags
+    for tag_name in tags_data:
+        tag = db.query(models.Tag).filter(models.Tag.name == tag_name).first()
+        if not tag:
+            tag = models.Tag(name=tag_name)
+            db.add(tag)
+        db_problem.tags.append(tag)
+
     db.add(db_problem)
     db.commit()
     db.refresh(db_problem)
@@ -76,6 +86,46 @@ async def delete_test_case(test_id: int, db: Session = Depends(get_db)):
     db.delete(test_case)
     db.commit()
     return {"message": "Test deleted"}
+
+@router.put("/problems/{problem_id}", response_model=schemas.Problem)
+async def update_problem(problem_id: int, problem_update: schemas.ProblemCreate, db: Session = Depends(get_db)):
+    # 1. Check if problem exists
+    db_problem = db.query(models.Problem).filter(models.Problem.id == problem_id).first()
+    if not db_problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    # 2. Update basic fields
+    db_problem.title = problem_update.title
+    db_problem.description = problem_update.description
+    db_problem.difficulty = problem_update.difficulty
+    db_problem.hint = problem_update.hint
+    db_problem.editorial = problem_update.editorial
+    
+    # 3. Handle Tags (Replace all)
+    db_problem.tags = [] # Clear existing associations
+    for tag_name in problem_update.tags:
+        tag = db.query(models.Tag).filter(models.Tag.name == tag_name).first()
+        if not tag:
+            tag = models.Tag(name=tag_name)
+            db.add(tag)
+        db_problem.tags.append(tag)
+
+    # 4. Handle Test Cases (Complete Replacement)
+    # Clear old test cases
+    db.query(models.TestCase).filter(models.TestCase.problem_id == problem_id).delete()
+    
+    # Create new test cases from payload
+    for tc in problem_update.test_cases:
+        db_tc = models.TestCase(
+            input_data=tc.input_data,
+            expected_output=tc.expected_output,
+            problem_id=problem_id
+        )
+        db.add(db_tc)
+        
+    db.commit()
+    db.refresh(db_problem)
+    return db_problem
 
 # @router.post("/submit/{problem_id}")
 # async def submit_solution(

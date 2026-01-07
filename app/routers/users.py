@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from app import database, models, schemas, utils, dependencies
 from app.database import get_db
+import os
 
 router = APIRouter()
 
@@ -88,7 +89,7 @@ async def read_all_users(
     users = db.query(models.User).all()
     return users
 
-SUPER_ADMIN_EMAIL = "denis@student.upt.ro"
+SUPER_ADMIN_EMAIL = os.getenv("SUPER_ADMIN_EMAIL")
 
 @router.put("/users/{user_id}/toggle-admin", response_model=schemas.User)
 async def toggle_admin(

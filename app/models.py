@@ -1,6 +1,19 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Float, func, Table
 from sqlalchemy.orm import relationship
 from .database import Base
+
+# Association Table for Many-to-Many
+problem_tags = Table(
+    "problem_tags",
+    Base.metadata,
+    Column("problem_id", Integer, ForeignKey("problems.id")),
+    Column("tag_id", Integer, ForeignKey("tags.id"))
+)
+
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -9,9 +22,12 @@ class Problem(Base):
     title = Column(String, index=True)
     description = Column(Text)
     difficulty = Column(String)
+    hint = Column(Text, nullable=True)
+    editorial = Column(Text, nullable=True)
 
     test_cases = relationship("TestCase", back_populates="problem", cascade="all, delete-orphan")
     submissions = relationship("Submission", back_populates="problem", cascade="all, delete-orphan")
+    tags = relationship("Tag", secondary=problem_tags, backref="problems")
 
 class TestCase(Base):
     __tablename__ = "test_cases"
@@ -41,6 +57,8 @@ class Submission(Base):
     id = Column(Integer, primary_key=True, index=True)
     code = Column(Text)
     status = Column(String)
+    execution_time = Column(Float, nullable=True)
+    memory_usage = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("problems.id"))

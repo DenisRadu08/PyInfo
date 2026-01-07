@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -11,11 +12,21 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# 1. Definim originile implicite (pentru dezvoltare locală)
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
 ]
+
+# 2. Adăugăm dinamic originea de producție din .env
+# Aici este trucul! Codul caută variabila "PROD_DOMAIN"
+prod_domain = os.getenv("PROD_DOMAIN")
+
+if prod_domain:
+    # Dacă există (pe server), o adăugăm în listă
+    origins.append(prod_domain)
+    print(f"🌍 Added production domain to CORS: {prod_domain}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -144,34 +155,7 @@ async def delete_problem(problem_id: int, db: Session = Depends(get_db)):
     
 
 
-@app.put("/problems/{problem_id}", response_model=schemas.Problem)
-async def update_problem(problem_id: int, problem_update: schemas.ProblemCreate, db: Session = Depends(get_db)):
-    # 1. Check if problem exists
-    db_problem = db.query(models.Problem).filter(models.Problem.id == problem_id).first()
-    if not db_problem:
-        raise HTTPException(status_code=404, detail="Problem not found")
 
-    # 2. Update problem fields
-    db_problem.title = problem_update.title
-    db_problem.description = problem_update.description
-    db_problem.difficulty = problem_update.difficulty
-    
-    # 3. Handle Test Cases (Complete Replacement)
-    # Clear old test cases
-    db.query(models.TestCase).filter(models.TestCase.problem_id == problem_id).delete()
-    
-    # Create new test cases from payload
-    for tc in problem_update.test_cases:
-        db_tc = models.TestCase(
-            input_data=tc.input_data,
-            expected_output=tc.expected_output,
-            problem_id=problem_id
-        )
-        db.add(db_tc)
-        
-    db.commit()
-    db.refresh(db_problem)
-    return db_problem
 @app.get("/leaderboard")
 async def get_leaderboard(db: Session = Depends(get_db)):
     users = db.query(models.User).all()

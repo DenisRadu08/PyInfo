@@ -17,6 +17,15 @@ function RegisterPage() {
             return
         }
 
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            toast.error("Password must be at least 8 chars, contain 1 uppercase, 1 number, and 1 special char (!@#$%^&*)", {
+                duration: 5000,
+                style: { maxWidth: '500px' }
+            });
+            return;
+        }
+
         const payload = {
             username: username,
             email: email,

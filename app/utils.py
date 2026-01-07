@@ -7,7 +7,15 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # SECURITY WARNING: This fallback key is for development convenience only.
 # In production, this must be overridden by an environment variable.
-SECRET_KEY = os.getenv("SECRET_KEY", "cheie-de-rezerva-pentru-dezvoltare-locala-123")
+# Încearcă să citească cheia din variabilele de mediu (.env)
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+# Verificare de siguranță: Dacă cheia nu există, OPREȘTE serverul imediat.
+if not SECRET_KEY:
+    print("❌ EROARE CRITICĂ: Variabila SECRET_KEY lipsește din .env!", file=sys.stderr)
+    print("   Aplicația nu poate porni din motive de securitate.", file=sys.stderr)
+    sys.exit(1) # Oprește procesul cu cod de eroare
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 240
 

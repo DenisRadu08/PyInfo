@@ -10,6 +10,13 @@ function HomePage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [filterDifficulty, setFilterDifficulty] = useState('All')
 
+    // 1. Dictionarul de traducere
+    const difficultyMap = {
+        'Easy': 'Ușor',
+        'Medium': 'Mediu',
+        'Hard': 'Greu'
+    };
+
     useEffect(() => {
         api.get('/problems')
             .then(response => {
@@ -34,6 +41,7 @@ function HomePage() {
         }
 
         // Filter by Difficulty
+        // Aici pastram 'All' pentru logica interna
         if (filterDifficulty !== 'All') {
             result = result.filter(p => p.difficulty === filterDifficulty)
         }
@@ -53,20 +61,21 @@ function HomePage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-10">
             <h1 className="text-4xl font-extrabold text-slate-900 mb-8 tracking-tight text-center">
-                Practice Problems
+                Probleme de Exersat
             </h1>
 
             {/* Filters Section */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                 <input
                     type="text"
-                    placeholder="Search problems..."
+                    placeholder="Caută probleme..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full md:w-96 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
                 />
 
                 <div className="flex gap-2">
+                    {/* 2. REPARAT: Folosim valorile in Engleza pentru logica ('All', 'Easy'...) */}
                     {['All', 'Easy', 'Medium', 'Hard'].map(diff => (
                         <button
                             key={diff}
@@ -76,7 +85,8 @@ function HomePage() {
                                 : 'bg-white text-slate-600 hover:bg-gray-50 border border-gray-200'
                                 }`}
                         >
-                            {diff}
+                            {/* 3. Aici traducem DOAR ce vede utilizatorul */}
+                            {diff === 'All' ? 'Toate' : difficultyMap[diff]}
                         </button>
                     ))}
                 </div>
@@ -110,17 +120,19 @@ function HomePage() {
                                 </h3>
                                 {problem.is_solved && (
                                     <span className="flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2 py-1 rounded-full border border-green-100">
-                                        ✅ Solved
+                                        ✅ Rezolvat
                                     </span>
                                 )}
                             </div>
 
                             <div className="flex items-center justify-between mt-auto">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getDifficultyColor(problem.difficulty)}`}>
-                                    {problem.difficulty}
+                                    {/* 4. REPARAT: Traducem dificultatea pe card */}
+                                    {difficultyMap[problem.difficulty]}
                                 </span>
                                 <span className="text-gray-400 text-sm group-hover:text-emerald-500 transition-colors">
-                                    View →
+                                    {/* 5. REPARAT: View -> Vezi */}
+                                    Vezi →
                                 </span>
                             </div>
                         </Link>
@@ -128,12 +140,12 @@ function HomePage() {
                 </div>
             ) : (
                 <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
-                    <p className="text-xl text-gray-500">No problems match your criteria.</p>
+                    <p className="text-xl text-gray-500">Nu am găsit probleme conform criteriilor.</p>
                     <button
                         onClick={() => { setSearchTerm(''); setFilterDifficulty('All'); }}
                         className="mt-4 text-emerald-600 font-medium hover:underline"
                     >
-                        Clear Filters
+                        Șterge Filtrele
                     </button>
                 </div>
             )}

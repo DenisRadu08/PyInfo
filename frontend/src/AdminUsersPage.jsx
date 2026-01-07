@@ -8,7 +8,7 @@ function AdminUsersPage() {
     const [processingId, setProcessingId] = useState(null)
 
     const currentUserEmail = localStorage.getItem('email')
-    const SUPER_ADMIN_EMAIL = "denis@student.upt.ro"
+    const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
     const isSuperAdmin = currentUserEmail === SUPER_ADMIN_EMAIL
 
     useEffect(() => {
@@ -95,8 +95,8 @@ function AdminUsersPage() {
                                         onClick={() => handleToggleAdmin(user.id)}
                                         disabled={!isSuperAdmin || user.email === SUPER_ADMIN_EMAIL || processingId === user.id}
                                         className={`font-semibold disabled:opacity-50 disabled:cursor-not-allowed ${!isSuperAdmin || user.email === SUPER_ADMIN_EMAIL
-                                                ? 'text-gray-400'
-                                                : 'text-indigo-600 hover:text-indigo-900'
+                                            ? 'text-gray-400'
+                                            : 'text-indigo-600 hover:text-indigo-900'
                                             }`}
                                     >
                                         {processingId === user.id ? 'Updating...' : 'Toggle Admin'}

@@ -5,8 +5,8 @@ import os
 
 def execute_code(code: str, input_data: str, timeout: float = 2.0, memory_limit_mb: int = 256) -> dict:
     """
-    Executes Python code using a fixed wrapper script approach for strict memory enforcement.
-    Rewritten to use explicit file paths and internal limit setting logic.
+    Executes Python code inside a 'Soft Sandbox' wrapper.
+    It blocks dangerous modules (os, subprocess) and functions (open).
     """
     
     # 1. Define Paths (Relative to CWD: /app)
@@ -14,41 +14,68 @@ def execute_code(code: str, input_data: str, timeout: float = 2.0, memory_limit_
     wrapper_file = "temp_wrapper.py"
 
     # 2. Wrapper Content
-    # We use strict limits logic injected into the wrapper
-    # Added RLIMIT_DATA as backup to RLIMIT_AS
+    # FIX: Citim codul utilizatorului INAINTE sa blocam functia open()
     wrapper_code = f"""
 import sys
 import resource
-import subprocess
-import os
+import builtins
+
+# --- 0. PREPARE (Read code before locking doors) ---
+user_code_content = ""
+try:
+    with builtins.open("{user_file}", "r", encoding="utf-8") as f:
+        user_code_content = f.read()
+except Exception as e:
+    print(f"System Error: Could not read user code - {{e}}", file=sys.stderr)
+    sys.exit(1)
+
+# --- SECURITY LAYER START ---
+# 1. Disable File Access
+def no_access(*args, **kwargs):
+    raise PermissionError("Security Violation: File access is disabled.")
+
+builtins.open = no_access
+
+# 2. Block Dangerous Modules
+# We 'poison' the sys.modules cache so imports fail
+blacklist = ['os', 'subprocess', 'shutil', 'importlib', 'inspect']
+
+for mod in blacklist:
+    sys.modules[mod] = None
+
+# Custom importer to catch new import attempts
+original_import = builtins.__import__
+def secure_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name in blacklist:
+        raise ImportError(f"Security Violation: Module '{{name}}' is banned.")
+    return original_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = secure_import
+# --- SECURITY LAYER END ---
 
 # STRICT LIMITS
 MEM_LIMIT = {memory_limit_mb} * 1024 * 1024  # {memory_limit_mb} MB
 
-# Silent during normal operation to avoid polluting stderr
-
 try:
     resource.setrlimit(resource.RLIMIT_AS, (MEM_LIMIT, MEM_LIMIT))
-    try:
-        resource.setrlimit(resource.RLIMIT_DATA, (MEM_LIMIT, MEM_LIMIT))
-    except:
-        pass
 except Exception:
-    # Fail silently on resource setting to avoid false positive runtime errors
     pass
 
 # EXECUTE USER CODE
 try:
-    # We read and exec to stay in the same process with limits applied
-    with open("{user_file}", "r", encoding="utf-8") as f:
-        code = f.read()
-    exec(code, {{'__name__': '__main__'}})
+    # Run the code we read earlier
+    exec(user_code_content, {{'__name__': '__main__'}})
+
+except ImportError as e:
+    print(f"Security Error: {{e}}", file=sys.stderr)
+    sys.exit(1)
+except PermissionError as e:
+    print(f"Security Error: {{e}}", file=sys.stderr)
+    sys.exit(1)
 except MemoryError:
-    # This is the ONLY time we want to print to stderr for control flow
     print("Memory Limit Exceeded", file=sys.stderr)
-    sys.exit(137) # Simulate OOM via exit code
+    sys.exit(137)
 except Exception as e:
-    # Print runtime errors normally
     print(f"Runtime Error: {{e}}", file=sys.stderr)
     sys.exit(1)
 """
@@ -64,7 +91,6 @@ except Exception as e:
             f.write(wrapper_code)
 
         # 4. Execute
-        # Using sys.executable to ensure the correct python env
         cmd = [sys.executable, wrapper_file]
         
         result = subprocess.run(
@@ -82,7 +108,16 @@ except Exception as e:
 
         # 5. Parse Results
         
-        # Check for MLE (Exit 137 or MemoryError in logs)
+        # Check for Security Violations explicitly
+        if "Security Violation" in stderr or "Security Error" in stderr:
+             return {
+                "status": "Runtime Error",
+                "output": stdout,
+                "error": "🚫 Security Violation: You are trying to use banned modules or read files.",
+                "execution_time": execution_time
+            }
+
+        # Check for MLE
         if returncode == 137 or "Memory Limit Exceeded" in stderr:
              return {
                 "status": "Memory Limit Exceeded",
@@ -96,13 +131,12 @@ except Exception as e:
             return {
                 "status": "Runtime Error",
                 "output": stdout,
-                "error": stderr.strip(), # Clean whitespace
+                "error": stderr.strip(),
                 "execution_time": execution_time
             }
 
-        # Success - Strict check: stderr should be empty for "Accepted"
+        # Success check
         if stderr.strip():
-             # If wrapper was silent, this might be a runtime warning or error from user code
              return {
                 "status": "Runtime Error",
                 "output": stdout,
@@ -110,7 +144,6 @@ except Exception as e:
                 "execution_time": execution_time
             }
 
-        # Success
         return {
             "status": "Accepted",
             "output": stdout,
