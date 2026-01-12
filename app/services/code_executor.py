@@ -2,17 +2,16 @@ import sys
 import subprocess
 import time
 import os
-import uuid
 
 def execute_code(code: str, input_data: str, timeout: float = 2.0, memory_limit_mb: int = 256) -> dict:
     """
     Executes Python code inside a 'Soft Sandbox' wrapper.
     It blocks dangerous modules (os, subprocess) and functions (open).
     """
-    unique_id = str(uuid.uuid4())
+    
     # 1. Define Paths (Relative to CWD: /app)
-    user_file = "temp_user_{unique_id}.py"
-    wrapper_file = "temp_wrapper_{unique_id}.py"
+    user_file = "temp_user_code.py"
+    wrapper_file = "temp_wrapper.py"
 
     # 2. Wrapper Content
     # FIX: Citim codul utilizatorului INAINTE sa blocam functia open()
