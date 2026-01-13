@@ -1,307 +1,431 @@
 from app.database import SessionLocal
 from app.models import Problem, TestCase, Tag
 
-# ==========================================
-# 🟢 PROBLEME EASY (8)
-# ==========================================
-PROBLEMS_EASY = [
+# ==============================================================================
+# LISTA CELOR 20 DE PROBLEME (8 Easy, 8 Medium, 4 Hard)
+# ==============================================================================
+
+ALL_PROBLEMS = [
+    # --- EASY (1-8) ---
     {
-        "title": "Two Sum",
-        "description": "Se dă un vector de numere întregi `nums` și un număr întreg `target`.\nReturnați indicii celor două numere din vector astfel încât suma lor să fie egală cu `target`.\nPuteți presupune că fiecare intrare are exact o soluție și nu puteți folosi același element de două ori. Ordinea răspunsului nu contează.",
+        "title": "Suma a Două Numere",
+        "description": (
+            "Scrieți un program care citește două numere întregi și afișează suma lor.\n\n"
+            "**Instrucțiuni:**\n"
+            "Datele se citesc de pe două linii separate.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "5\n"
+            "10\n"
+            "Output:\n"
+            "15"
+        ),
         "difficulty": "Easy",
-        "tags": ["Array", "HashMap"],
-        "hint": "Folosește un dicționar pentru a stoca numerele vizitate și indexul lor. Când ești la un număr `x`, verifică dacă `target - x` există deja în dicționar.",
-        "editorial": "Iterăm prin vector. Calculăm `complement = target - num`. Dacă `complement` e în map, returnăm `[map[complement], i]`. Altfel, adăugăm `num` în map.",
+        "tags": ["Math", "Basics"],
+        "hint": "Folosește funcția `input()` de două ori și convertește rezultatul la `int`.",
+        "editorial": "a = int(input()); b = int(input()); print(a + b)",
         "test_cases": [
-            {"input_data": "[2, 7, 11, 15]\n9", "expected_output": "[0, 1]"},
-            {"input_data": "[3, 2, 4]\n6", "expected_output": "[1, 2]"},
-            {"input_data": "[3, 3]\n6", "expected_output": "[0, 1]"},
-            {"input_data": "[1, 5, 9]\n10", "expected_output": "[0, 2]"},
-            {"input_data": "[-1, -2, -3, -4, -5]\n-8", "expected_output": "[2, 4]"}
+            {"input_data": "3\n5", "expected_output": "8"},
+            {"input_data": "10\n-2", "expected_output": "8"},
+            {"input_data": "0\n0", "expected_output": "0"}
         ]
     },
     {
-        "title": "Verificare Palindrom",
-        "description": "Se dă un număr întreg `x`. Returnați `True` dacă `x` este un palindrom, și `False` în caz contrar.\nUn număr este palindrom dacă se citește la fel de la stânga la dreapta și de la dreapta la stânga.",
+        "title": "Par sau Impar",
+        "description": (
+            "Se dă un număr întreg `n`. Afișați `True` dacă numărul este par și `False` dacă este impar.\n\n"
+            "**Instrucțiuni:**\n"
+            "Citiți un singur număr de la tastatură.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "4\n"
+            "Output:\n"
+            "True"
+        ),
         "difficulty": "Easy",
-        "tags": ["Math"],
-        "hint": "Un număr negativ nu poate fi palindrom. Încearcă să inversezi numărul matematic (folosind modulo 10) și compară rezultatul cu numărul original.",
-        "editorial": "Dacă x < 0, return False. Inversăm x cifră cu cifră într-o variabilă nouă `reverted`. Dacă `x == reverted`, e palindrom.",
+        "tags": ["Math", "Logic"],
+        "hint": "Un număr este par dacă restul împărțirii la 2 este 0 (n % 2 == 0).",
+        "editorial": "n = int(input()); print(n % 2 == 0)",
         "test_cases": [
-            {"input_data": "121", "expected_output": "True"},
-            {"input_data": "-121", "expected_output": "False"},
-            {"input_data": "10", "expected_output": "False"},
-            {"input_data": "12321", "expected_output": "True"},
+            {"input_data": "2", "expected_output": "True"},
+            {"input_data": "3", "expected_output": "False"},
             {"input_data": "0", "expected_output": "True"}
         ]
     },
     {
-        "title": "Fizz Buzz",
-        "description": "Se dă un număr întreg `n`. Returnați o listă de string-uri de la 1 la `n`, unde:\n* Pentru multiplii de 3 scrieți \"Fizz\"\n* Pentru multiplii de 5 scrieți \"Buzz\"\n* Pentru multiplii de 3 și 5 scrieți \"FizzBuzz\"\n* Altfel scrieți numărul ca string.",
+        "title": "Maximul din Listă",
+        "description": (
+            "Se dă o listă de numere întregi. Găsiți și afișați cel mai mare număr din listă.\n\n"
+            "**Instrucțiuni:**\n"
+            "Inputul este o listă Python validă. Folosiți `nums = eval(input())`.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[1, 5, 3, 9, 2]\n"
+            "Output:\n"
+            "9"
+        ),
         "difficulty": "Easy",
-        "tags": ["Math", "String"],
-        "hint": "Verifică mai întâi divizibilitatea cu 15 (3 * 5), apoi cu 3, apoi cu 5.",
-        "editorial": "Buclă de la 1 la n. `if i % 15 == 0: FizzBuzz` etc.",
+        "tags": ["Array"],
+        "hint": "Poți folosi funcția `max()` din Python sau un loop.",
+        "editorial": "nums = eval(input()); print(max(nums))",
         "test_cases": [
-            {"input_data": "3", "expected_output": "['1', '2', 'Fizz']"},
-            {"input_data": "5", "expected_output": "['1', '2', 'Fizz', '4', 'Buzz']"},
-            {"input_data": "15", "expected_output": "['1', '2', 'Fizz', '4', 'Buzz', 'Fizz', '7', '8', 'Fizz', 'Buzz', '11', 'Fizz', '13', '14', 'FizzBuzz']"},
-            {"input_data": "1", "expected_output": "['1']"}
+            {"input_data": "[1, 2, 3]", "expected_output": "3"},
+            {"input_data": "[-5, -1, -10]", "expected_output": "-1"},
+            {"input_data": "[100]", "expected_output": "100"}
+        ]
+    },
+    {
+        "title": "Factorial",
+        "description": (
+            "Calculați factorialul unui număr `n` (n!). Factorialul lui n este produsul tuturor numerelor de la 1 la n.\n\n"
+            "**Instrucțiuni:**\n"
+            "Citiți n cu `n = int(input())`.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "5\n"
+            "Output:\n"
+            "120"
+        ),
+        "difficulty": "Easy",
+        "tags": ["Math", "Loop"],
+        "hint": "Poți folosi un loop `for` sau recursivitate. 5! = 1*2*3*4*5.",
+        "editorial": "import math; n = int(input()); print(math.factorial(n))",
+        "test_cases": [
+            {"input_data": "5", "expected_output": "120"},
+            {"input_data": "3", "expected_output": "6"},
+            {"input_data": "0", "expected_output": "1"}
         ]
     },
     {
         "title": "Inversare String",
-        "description": "Scrieți o funcție care inversează un string. String-ul de intrare este dat ca o listă de caractere `s`.\nTrebuie să faceți asta modificând lista de intrare (in-place) cu memorie suplimentară O(1).",
+        "description": (
+            "Se dă un text. Afișați textul inversat.\n\n"
+            "**Instrucțiuni:**\n"
+            "Citiți textul cu `text = input()`.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "python\n"
+            "Output:\n"
+            "nohtyp"
+        ),
         "difficulty": "Easy",
-        "tags": ["Two Pointers", "String"],
-        "hint": "Folosește doi pointeri: unul la început (left) și unul la sfârșit (right). Schimbă caracterele și mută pointerii spre centru.",
-        "editorial": "While left < right: swap(s[left], s[right]); left++; right--.",
+        "tags": ["String"],
+        "hint": "În Python poți inversa un string folosind slicing: `text[::-1]`.",
+        "editorial": "print(input()[::-1])",
         "test_cases": [
-            {"input_data": "['h','e','l','l','o']", "expected_output": "['o', 'l', 'l', 'e', 'h']"},
-            {"input_data": "['H','a','n','n','a','h']", "expected_output": "['h', 'a', 'n', 'n', 'a', 'H']"},
-            {"input_data": "['a']", "expected_output": "['a']"},
-            {"input_data": "['A','B']", "expected_output": "['B', 'A']"}
+            {"input_data": "abc", "expected_output": "cba"},
+            {"input_data": "hello world", "expected_output": "dlrow olleh"},
+            {"input_data": "a", "expected_output": "a"}
         ]
     },
     {
-        "title": "Numărul Lipsă",
-        "description": "Se dă un vector `nums` care conține `n` numere distincte din intervalul `[0, n]`. Returnați singurul număr din interval care lipsește din vector.",
+        "title": "Numărare Vocale",
+        "description": (
+            "Se dă un string. Afișați numărul de vocale (a, e, i, o, u) din el (indiferent dacă sunt mari sau mici).\n\n"
+            "**Instrucțiuni:**\n"
+            "Citiți string-ul de la tastatură.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "Salutare\n"
+            "Output:\n"
+            "4"
+        ),
         "difficulty": "Easy",
-        "tags": ["Array", "Math", "Bit Manipulation"],
-        "hint": "Suma numerelor de la 0 la n este n*(n+1)/2. Scade suma elementelor din vector din această sumă totală.",
-        "editorial": "Calculăm suma așteptată `n*(n+1)//2`. Scădem `sum(nums)`. Rezultatul e numărul lipsă.",
+        "tags": ["String", "Logic"],
+        "hint": "Iterează prin caractere și verifică dacă `char.lower() in 'aeiou'`.",
+        "editorial": "s = input().lower(); print(sum(1 for c in s if c in 'aeiou'))",
         "test_cases": [
-            {"input_data": "[3, 0, 1]", "expected_output": "2"},
-            {"input_data": "[0, 1]", "expected_output": "2"},
-            {"input_data": "[9,6,4,2,3,5,7,0,1]", "expected_output": "8"},
-            {"input_data": "[0]", "expected_output": "1"}
+            {"input_data": "Ana are mere", "expected_output": "6"},
+            {"input_data": "xyz", "expected_output": "0"},
+            {"input_data": "AEIOU", "expected_output": "5"}
         ]
     },
     {
-        "title": "Validare Paranteze",
-        "description": "Se dă un string `s` care conține doar caracterele '(', ')', '{', '}', '[' și ']'. Determinați dacă string-ul este valid.\nUn string este valid dacă:\n1. Parantezele deschise sunt închise de același tip de paranteze.\n2. Parantezele sunt închise în ordinea corectă.",
+        "title": "Palindrom",
+        "description": (
+            "Verificați dacă un string dat este palindrom (se citește la fel și invers). Afișați `True` sau `False`.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "radar\n"
+            "Output:\n"
+            "True"
+        ),
         "difficulty": "Easy",
-        "tags": ["Stack", "String"],
-        "hint": "Folosește o stivă (stack). Când întâlnești o paranteză deschisă, pune-o în stivă. Când întâlnești una închisă, verifică dacă vârful stivei este perechea ei.",
-        "editorial": "Dicționar mapare: `')':'(', ']':'[', '}':'{'`. Iterăm s. Dacă e deschisă -> push. Dacă e închisă -> pop și verificăm. La final stiva trebuie să fie goală.",
+        "tags": ["String"],
+        "hint": "Compară string-ul cu inversul său.",
+        "editorial": "s = input(); print(s == s[::-1])",
+        "test_cases": [
+            {"input_data": "radar", "expected_output": "True"},
+            {"input_data": "python", "expected_output": "False"},
+            {"input_data": "ana", "expected_output": "True"}
+        ]
+    },
+    {
+        "title": "Al N-lea număr Fibonacci",
+        "description": (
+            "Afișați al n-lea număr din șirul lui Fibonacci, unde F(0)=0, F(1)=1 și F(n)=F(n-1)+F(n-2).\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "6\n"
+            "Output:\n"
+            "8"
+        ),
+        "difficulty": "Easy",
+        "tags": ["Math", "Recursion"],
+        "hint": "Poți folosi recursivitate sau o abordare iterativă pentru eficiență.",
+        "editorial": "Iterativ: a,b=0,1; loop n times; a,b=b,a+b; print(a)",
+        "test_cases": [
+            {"input_data": "0", "expected_output": "0"},
+            {"input_data": "1", "expected_output": "1"},
+            {"input_data": "6", "expected_output": "8"},
+            {"input_data": "10", "expected_output": "55"}
+        ]
+    },
+
+    # --- MEDIUM (9-16) ---
+    {
+        "title": "Two Sum",
+        "description": (
+            "Se dă o listă de numere și o țintă (target). Afișați indicii celor două numere care adunate dau ținta.\n"
+            "Inputul este pe două linii: prima linie lista, a doua linie ținta.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[2, 7, 11, 15]\n"
+            "9\n"
+            "Output:\n"
+            "[0, 1]"
+        ),
+        "difficulty": "Medium",
+        "tags": ["Array", "HashMap"],
+        "hint": "Folosește un dicționar pentru a reține {valoare: index}.",
+        "editorial": "Iterăm lista. Dacă target - număr există în map, returnăm indecșii.",
+        "test_cases": [
+            {"input_data": "[2, 7, 11, 15]\n9", "expected_output": "[0, 1]"},
+            {"input_data": "[3, 2, 4]\n6", "expected_output": "[1, 2]"},
+            {"input_data": "[3, 3]\n6", "expected_output": "[0, 1]"}
+        ]
+    },
+    {
+        "title": "Fizz Buzz Avansat",
+        "description": (
+            "Se dă `n`. Afișați o listă cu numerele de la 1 la n, dar înlocuiți multiplii de 3 cu 'Fizz', de 5 cu 'Buzz' și de ambele cu 'FizzBuzz'.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "5\n"
+            "Output:\n"
+            "['1', '2', 'Fizz', '4', 'Buzz']"
+        ),
+        "difficulty": "Medium",
+        "tags": ["Math", "String"],
+        "hint": "Verifică divizibilitatea cu 15 mai întâi.",
+        "editorial": "List comprehension sau loop.",
+        "test_cases": [
+            {"input_data": "3", "expected_output": "['1', '2', 'Fizz']"},
+            {"input_data": "5", "expected_output": "['1', '2', 'Fizz', '4', 'Buzz']"},
+            {"input_data": "15", "expected_output": "['1', '2', 'Fizz', '4', 'Buzz', 'Fizz', '7', '8', 'Fizz', 'Buzz', '11', 'Fizz', '13', '14', 'FizzBuzz']"}
+        ]
+    },
+    {
+        "title": "Valid Parentheses",
+        "description": (
+            "Verificați dacă un șir de paranteze '()[]{}' este valid (închis corect și în ordine).\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "'()[]{}'\n"
+            "Output:\n"
+            "True"
+        ),
+        "difficulty": "Medium",
+        "tags": ["Stack"],
+        "hint": "Folosește o stivă (stack). Adaugă deschise, scoate când găsești închise.",
+        "editorial": "Stack pentru deschise. La închise verificăm vârful stivei.",
         "test_cases": [
             {"input_data": "'()'", "expected_output": "True"},
-            {"input_data": "'()[]{}'", "expected_output": "True"},
-            {"input_data": "'(]'", "expected_output": "False"},
             {"input_data": "'([)]'", "expected_output": "False"},
             {"input_data": "'{[]}'", "expected_output": "True"}
         ]
     },
     {
-        "title": "Best Time to Buy and Sell Stock",
-        "description": "Aveți un vector `prices` unde `prices[i]` este prețul unei acțiuni în ziua `i`. Vreți să maximizați profitul alegând o zi pentru a cumpăra o acțiune și o zi diferită din viitor pentru a o vinde.\nReturnați profitul maxim. Dacă nu se poate obține profit, returnați 0.",
-        "difficulty": "Easy",
-        "tags": ["Array", "DP"],
-        "hint": "Menține prețul minim întâlnit până acum și calculează profitul potențial la fiecare pas (preț curent - minim).",
-        "editorial": "`min_price = infinit`, `max_profit = 0`. For price in prices: update min_price, update max_profit = max(max_profit, price - min_price).",
+        "title": "Eliminare Duplicate",
+        "description": (
+            "Se dă o listă de numere. Returnați lista sortată fără duplicate.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[1, 2, 2, 3]\n"
+            "Output:\n"
+            "[1, 2, 3]"
+        ),
+        "difficulty": "Medium",
+        "tags": ["Array", "Sorting"],
+        "hint": "Transformă lista în Set și înapoi în Listă, apoi sortează.",
+        "editorial": "print(sorted(list(set(eval(input())))))",
         "test_cases": [
-            {"input_data": "[7,1,5,3,6,4]", "expected_output": "5"},
-            {"input_data": "[7,6,4,3,1]", "expected_output": "0"},
-            {"input_data": "[1, 2]", "expected_output": "1"},
-            {"input_data": "[2, 4, 1]", "expected_output": "2"}
+            {"input_data": "[1, 2, 2, 3]", "expected_output": "[1, 2, 3]"},
+            {"input_data": "[4, 4, 4]", "expected_output": "[4]"},
+            {"input_data": "[3, 1, 2, 1]", "expected_output": "[1, 2, 3]"}
         ]
     },
     {
-        "title": "Single Number",
-        "description": "Se dă un vector nevid de numere întregi `nums`, unde fiecare element apare de două ori, cu excepția unuia singur. Găsiți acel element unic.\nÎncercați o soluție cu complexitate liniară și memorie constantă.",
-        "difficulty": "Easy",
-        "tags": ["Bit Manipulation", "Array"],
-        "hint": "Operația XOR (^) are proprietatea că `a ^ a = 0` și `a ^ 0 = a`.",
-        "editorial": "Inițializăm `res = 0`. Facem XOR între `res` și toate numerele din vector. La final, `res` va fi numărul unic.",
-        "test_cases": [
-            {"input_data": "[2,2,1]", "expected_output": "1"},
-            {"input_data": "[4,1,2,1,2]", "expected_output": "4"},
-            {"input_data": "[1]", "expected_output": "1"},
-            {"input_data": "[0, 1, 0, 1, 99]", "expected_output": "99"}
-        ]
-    }
-]
-
-# ==========================================
-# 🟡 PROBLEME MEDIUM (8)
-# ==========================================
-PROBLEMS_MEDIUM = [
-    {
-        "title": "Cel mai lung subșir fără duplicate",
-        "description": "Se dă un string `s`. Găsiți lungimea celui mai lung subșir (substring) care nu conține caractere repetate.",
+        "title": "Numărul Lipsă (Medium)",
+        "description": (
+            "Într-o listă de la 0 la n lipsește un singur număr. Găsiți-l.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[3, 0, 1]\n"
+            "Output:\n"
+            "2"
+        ),
         "difficulty": "Medium",
-        "tags": ["Sliding Window", "HashMap"],
-        "hint": "Folosește o fereastră glisantă (sliding window) și un set/dicționar pentru a ține minte caracterele din fereastra curentă.",
-        "editorial": "Pointeri `start` și `end`. Dicționar `char_index`. Când întâlnim duplicat, mutăm `start` la `char_index[char] + 1`.",
+        "tags": ["Math", "Array"],
+        "hint": "Suma așteptată (n*(n+1)/2) minus suma actuală.",
+        "editorial": "n = len(nums); expected = n*(n+1)//2; print(expected - sum(nums))",
         "test_cases": [
-            {"input_data": "'abcabcbb'", "expected_output": "3"},
-            {"input_data": "'bbbbb'", "expected_output": "1"},
-            {"input_data": "'pwwkew'", "expected_output": "3"},
-            {"input_data": "''", "expected_output": "0"},
-            {"input_data": "'dvdf'", "expected_output": "3"}
-        ]
-    },
-    {
-        "title": "Container With Most Water",
-        "description": "Se dă un vector `height` de lungime `n`. Există `n` linii verticale desenate astfel încât capetele liniei `i` sunt `(i, 0)` și `(i, height[i])`.\nGăsiți două linii care, împreună cu axa x, formează un container care conține cea mai multă apă.",
-        "difficulty": "Medium",
-        "tags": ["Two Pointers", "Greedy"],
-        "hint": "Pornește cu doi pointeri la capetele vectorului. Calculează aria. Mută pointerul care indică înălțimea mai mică spre interior.",
-        "editorial": "`left = 0`, `right = n-1`. Area = `min(h[l], h[r]) * (r-l)`. If `h[l] < h[r]`: `l++` else `r--`.",
-        "test_cases": [
-            {"input_data": "[1,8,6,2,5,4,8,3,7]", "expected_output": "49"},
-            {"input_data": "[1,1]", "expected_output": "1"},
-            {"input_data": "[4,3,2,1,4]", "expected_output": "16"},
-            {"input_data": "[1,2,1]", "expected_output": "2"}
-        ]
-    },
-    {
-        "title": "3Sum",
-        "description": "Se dă un vector de numere întregi `nums`. Returnați toate tripletele `[nums[i], nums[j], nums[k]]` astfel încât `i != j`, `i != k`, `j != k`, și suma lor este 0.\nSoluția nu trebuie să conțină triplete duplicate.",
-        "difficulty": "Medium",
-        "tags": ["Two Pointers", "Array"],
-        "hint": "Sortează vectorul. Iterează cu `i` și folosește Two Pointers (`left`, `right`) pentru restul vectorului ca la problema Two Sum, dar căutând `-nums[i]`.",
-        "editorial": "Sortare. For `i` in range. Dacă `nums[i] > 0` break. Skip duplicates. Two pointers `l`, `r`. Check sum. Skip duplicates internal.",
-        "test_cases": [
-            {"input_data": "[-1,0,1,2,-1,-4]", "expected_output": "[[-1, -1, 2], [-1, 0, 1]]"},
-            {"input_data": "[0,1,1]", "expected_output": "[]"},
-            {"input_data": "[0,0,0]", "expected_output": "[[0, 0, 0]]"},
-            {"input_data": "[-2,0,1,1,2]", "expected_output": "[[-2, 0, 2], [-2, 1, 1]]"}
-        ]
-    },
-    {
-        "title": "Group Anagrams",
-        "description": "Se dă o listă de string-uri `strs`. Grupați anagramele împreună. Puteți returna răspunsul în orice ordine.",
-        "difficulty": "Medium",
-        "tags": ["HashMap", "String"],
-        "hint": "Două string-uri sunt anagrame dacă au aceleași caractere sortate. Folosește asta ca cheie într-un HashMap.",
-        "editorial": "Map `key -> list`. Pentru fiecare cuvânt, cheia este `tuple(sorted(word))`. Adăugăm cuvântul în lista corespunzătoare cheii.",
-        "test_cases": [
-            {"input_data": "['eat','tea','tan','ate','nat','bat']", "expected_output": "[['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]"},
-            {"input_data": "['']", "expected_output": "[['']]"},
-            {"input_data": "['a']", "expected_output": "[['a']]"}
+            {"input_data": "[3, 0, 1]", "expected_output": "2"},
+            {"input_data": "[0, 1]", "expected_output": "2"},
+            {"input_data": "[0]", "expected_output": "1"}
         ]
     },
     {
         "title": "Merge Intervals",
-        "description": "Se dă o listă de intervale `intervals` unde `intervals[i] = [starti, endi]`. Uniți (merge) toate intervalele care se suprapun și returnați lista de intervale ne-suprapuse care acoperă exact aceeași distanță.",
+        "description": (
+            "Se dă o listă de intervale. Uniți toate intervalele care se suprapun.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[[1,3],[2,6],[8,10],[15,18]]\n"
+            "Output:\n"
+            "[[1, 6], [8, 10], [15, 18]]"
+        ),
         "difficulty": "Medium",
-        "tags": ["Array", "Sorting"],
-        "hint": "Sortează intervalele după timpul de start. Apoi iterează și unește-le dacă `current.end >= next.start`.",
-        "editorial": "Sortare după `x[0]`. `merged = [intervals[0]]`. For interval in intervals[1:]: if interval[0] <= merged[-1][1]: merge (max end). Else: append.",
+        "tags": ["Sorting", "Array"],
+        "hint": "Sortează intervalele după start. Iterează și unește dacă se suprapun.",
+        "editorial": "Sortare. Merge logic: if current.start <= last.end, extend last.end.",
         "test_cases": [
             {"input_data": "[[1,3],[2,6],[8,10],[15,18]]", "expected_output": "[[1, 6], [8, 10], [15, 18]]"},
-            {"input_data": "[[1,4],[4,5]]", "expected_output": "[[1, 5]]"},
-            {"input_data": "[[1,4],[0,4]]", "expected_output": "[[0, 4]]"},
-            {"input_data": "[[1,4],[2,3]]", "expected_output": "[[1, 4]]"}
+            {"input_data": "[[1,4],[4,5]]", "expected_output": "[[1, 5]]"}
         ]
     },
     {
-        "title": "Maximum Subarray",
-        "description": "Se dă un vector de numere întregi `nums`. Găsiți subșirul contiguu (care conține cel puțin un număr) care are suma maximă și returnați acea sumă.",
+        "title": "Anagram Check",
+        "description": (
+            "Se dau două cuvinte. Verificați dacă sunt anagrame (au aceleași litere).\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "'ascult'\n"
+            "'sculat'\n"
+            "Output:\n"
+            "True"
+        ),
         "difficulty": "Medium",
-        "tags": ["DP", "Kadane's Algorithm"],
-        "hint": "Algoritmul lui Kadane: Parcurge vectorul și menține suma curentă. Dacă suma curentă devine negativă, reseteaz-o la 0.",
-        "editorial": "`max_so_far = nums[0]`, `curr_max = nums[0]`. For i in 1..n: `curr_max = max(nums[i], curr_max + nums[i])`, `max_so_far = max(...)`.",
+        "tags": ["String", "Sorting"],
+        "hint": "Sortează caracterele ambelor cuvinte și compară.",
+        "editorial": "sorted(s1) == sorted(s2)",
         "test_cases": [
-            {"input_data": "[-2,1,-3,4,-1,2,1,-5,4]", "expected_output": "6"},
-            {"input_data": "[1]", "expected_output": "1"},
-            {"input_data": "[5,4,-1,7,8]", "expected_output": "23"},
-            {"input_data": "[-1, -2]", "expected_output": "-1"}
+            {"input_data": "'ascult'\n'sculat'", "expected_output": "True"},
+            {"input_data": "'rat'\n'car'", "expected_output": "False"},
+            {"input_data": "'a'\n'a'", "expected_output": "True"}
         ]
     },
     {
-        "title": "Product of Array Except Self",
-        "description": "Se dă un vector `nums`. Returnați un vector `answer` astfel încât `answer[i]` să fie egal cu produsul tuturor elementelor din `nums` cu excepția lui `nums[i]`.\nTrebuie să rezolvați problema în O(n) timp și fără a folosi operația de împărțire.",
+        "title": "Produs Array Fără Sine",
+        "description": (
+            "Se dă un vector. Returnați un vector unde fiecare element este produsul tuturor celorlalte elemente, exceptând pe el însuși.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[1, 2, 3, 4]\n"
+            "Output:\n"
+            "[24, 12, 8, 6]"
+        ),
         "difficulty": "Medium",
         "tags": ["Array", "Prefix Sum"],
-        "hint": "Folosește doi vectori (sau două treceri): unul pentru prefix-produs (stânga->dreapta) și unul pentru sufix-produs (dreapta->stânga).",
-        "editorial": "Left pass: `res[i] = res[i-1] * nums[i-1]`. Right pass: menținem variabila `right` și înmulțim `res[i]` cu ea, apoi actualizăm `right`.",
+        "hint": "Calculează produs prefix și produs sufix.",
+        "editorial": "Două treceri: stânga->dreapta și dreapta->stânga.",
         "test_cases": [
-            {"input_data": "[1,2,3,4]", "expected_output": "[24, 12, 8, 6]"},
-            {"input_data": "[-1,1,0,-3,3]", "expected_output": "[0, 0, 9, 0, 0]"},
-            {"input_data": "[2, 3]", "expected_output": "[3, 2]"}
+            {"input_data": "[1, 2, 3, 4]", "expected_output": "[24, 12, 8, 6]"},
+            {"input_data": "[-1, 1, 0, -3, 3]", "expected_output": "[0, 0, 9, 0, 0]"}
         ]
     },
-    {
-        "title": "Longest Palindromic Substring",
-        "description": "Se dă un string `s`. Returnați cel mai lung subșir palindromic din `s`.",
-        "difficulty": "Medium",
-        "tags": ["String", "DP", "Two Pointers"],
-        "hint": "Pentru fiecare caracter, consideră-l ca fiind centrul unui palindrom și extinde-te spre stânga și dreapta cât timp caracterele sunt egale.",
-        "editorial": "Iterăm `i` de la 0 la len(s). Expand Around Center pentru `(i, i)` (impar) și `(i, i+1)` (par). Păstrăm maximul.",
-        "test_cases": [
-            {"input_data": "'babad'", "expected_output": "'bab'"}, 
-            {"input_data": "'cbbd'", "expected_output": "'bb'"},
-            {"input_data": "'a'", "expected_output": "'a'"},
-            {"input_data": "'ac'", "expected_output": "'a'"}
-        ]
-    }
-]
 
-# ==========================================
-# 🔴 PROBLEME HARD (4)
-# ==========================================
-PROBLEMS_HARD = [
+    # --- HARD (17-20) ---
     {
         "title": "Trapping Rain Water",
-        "description": "Se dă un vector `height` reprezentând înălțimile unui teren (lățimea fiecărei bare este 1). Calculați câtă apă de ploaie poate fi reținută după o ploaie.",
+        "description": (
+            "Se dă un vector de înălțimi (harta unui relief). Calculați câtă apă de ploaie poate fi reținută între bare.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[0,1,0,2,1,0,1,3,2,1,2,1]\n"
+            "Output:\n"
+            "6"
+        ),
         "difficulty": "Hard",
-        "tags": ["Two Pointers", "Stack", "DP"],
-        "hint": "Pentru fiecare bară, apa reținută este `min(max_left, max_right) - height[i]`. Poți precalcula max_left și max_right sau folosi Two Pointers.",
-        "editorial": "Two pointers `l`, `r`. `max_l`, `max_r`. Dacă `height[l] < height[r]`: dacă `height[l] >= max_l`: update `max_l`, else `ans += max_l - height[l]`, `l++`. Similar pentru dreapta.",
+        "tags": ["Two Pointers", "DP"],
+        "hint": "Pentru fiecare poziție, apa reținută este min(max_stanga, max_dreapta) - inaltime.",
+        "editorial": "Algoritm Two Pointers cu complexitate O(n).",
         "test_cases": [
             {"input_data": "[0,1,0,2,1,0,1,3,2,1,2,1]", "expected_output": "6"},
-            {"input_data": "[4,2,0,3,2,5]", "expected_output": "9"},
-            {"input_data": "[4,2,3]", "expected_output": "1"},
-            {"input_data": "[1, 2]", "expected_output": "0"}
-        ]
-    },
-    {
-        "title": "Edit Distance",
-        "description": "Se dau două cuvinte `word1` și `word2`. Returnați numărul minim de operații necesare pentru a converti `word1` în `word2`.\nOperațiile permise: Inserare, Ștergere, Înlocuire a unui caracter.",
-        "difficulty": "Hard",
-        "tags": ["DP", "String"],
-        "hint": "Folosește Programare Dinamică. `dp[i][j]` = distanța dintre primele i caractere din word1 și primele j din word2.",
-        "editorial": "Dacă `w1[i] == w2[j]`, `dp[i][j] = dp[i-1][j-1]`. Altfel `1 + min(insert, delete, replace)`.",
-        "test_cases": [
-            {"input_data": "'horse'\n'ros'", "expected_output": "3"},
-            {"input_data": "'intention'\n'execution'", "expected_output": "5"},
-            {"input_data": "'a'\n'b'", "expected_output": "1"},
-            {"input_data": "''\n'abc'", "expected_output": "3"}
-        ]
-    },
-    {
-        "title": "Minimum Window Substring",
-        "description": "Se dau două string-uri `s` și `t`. Returnați cel mai mic subșir din `s` care conține toate caracterele din `t` (inclusiv duplicatele). Dacă nu există, returnați stringul gol.",
-        "difficulty": "Hard",
-        "tags": ["Sliding Window", "HashMap"],
-        "hint": "Sliding window cu doi pointeri. Extinde `right` până ai toate caracterele. Apoi micșorează `left` cât timp condiția rămâne validă, pentru a găsi minimul.",
-        "editorial": "Frequency map pentru T. Variabilă `counter` pentru caractere rămase. Move `right`, scade din map. Dacă `counter==0`, move `left` și update min_len.",
-        "test_cases": [
-            {"input_data": "'ADOBECODEBANC'\n'ABC'", "expected_output": "'BANC'"},
-            {"input_data": "'a'\n'a'", "expected_output": "'a'"},
-            {"input_data": "'a'\n'aa'", "expected_output": "''"},
-            {"input_data": "'ab'\n'a'", "expected_output": "'a'"}
+            {"input_data": "[4,2,0,3,2,5]", "expected_output": "9"}
         ]
     },
     {
         "title": "Median of Two Sorted Arrays",
-        "description": "Se dau doi vectori sortați `nums1` și `nums2` de dimensiuni m și n. Returnați mediana celor doi vectori combinați. Complexitatea trebuie să fie O(log (m+n)).",
+        "description": (
+            "Se dau doi vectori deja sortați. Găsiți mediana celor doi vectori combinați. Soluția trebuie să fie eficientă.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[1, 3]\n"
+            "[2]\n"
+            "Output:\n"
+            "2.0"
+        ),
         "difficulty": "Hard",
-        "tags": ["Binary Search", "Divide and Conquer"],
-        "hint": "Nu face merge la vectori (ar fi O(m+n)). Folosește căutare binară pe vectorul mai scurt pentru a găsi partiția corectă.",
-        "editorial": "Căutăm binar o partiție în `nums1` (x) și `nums2` (y) astfel încât max(LeftX, LeftY) <= min(RightX, RightY). Mediana se calculează din aceste 4 numere.",
+        "tags": ["Binary Search"],
+        "hint": "Nu uni listele! Folosește Binary Search pe vectorul mai scurt.",
+        "editorial": "Binary search pe partiții.",
         "test_cases": [
-            {"input_data": "[1,3]\n[2]", "expected_output": "2.0"},
-            {"input_data": "[1,2]\n[3,4]", "expected_output": "2.5"},
-            {"input_data": "[0,0]\n[0,0]", "expected_output": "0.0"},
-            {"input_data": "[]\n[1]", "expected_output": "1.0"}
+            {"input_data": "[1, 3]\n[2]", "expected_output": "2.0"},
+            {"input_data": "[1, 2]\n[3, 4]", "expected_output": "2.5"}
+        ]
+    },
+    {
+        "title": "Edit Distance",
+        "description": (
+            "Se dau două cuvinte. Aflați numărul minim de operații (inserare, ștergere, înlocuire) pentru a transforma primul cuvânt în al doilea.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "'horse'\n"
+            "'ros'\n"
+            "Output:\n"
+            "3"
+        ),
+        "difficulty": "Hard",
+        "tags": ["Dynamic Programming"],
+        "hint": "Folosește o matrice DP unde dp[i][j] este distanța dintre primele i și primele j caractere.",
+        "editorial": "Dacă caracterele sunt egale, dp[i][j] = dp[i-1][j-1]. Altfel 1 + min(insert, delete, replace).",
+        "test_cases": [
+            {"input_data": "'horse'\n'ros'", "expected_output": "3"},
+            {"input_data": "'intention'\n'execution'", "expected_output": "5"}
+        ]
+    },
+    {
+        "title": "Cel mai lung șir consecutiv",
+        "description": (
+            "Dat fiind un vector de numere nesortat, găsiți lungimea celei mai lungi secvențe de numere consecutive.\n\n"
+            "**Exemplu:**\n"
+            "Input:\n"
+            "[100, 4, 200, 1, 3, 2]\n"
+            "Output:\n"
+            "4\n"
+            "(Explicație: secvența este [1, 2, 3, 4])"
+        ),
+        "difficulty": "Hard",
+        "tags": ["HashMap", "Union Find"],
+        "hint": "Pune toate numerele într-un Set pentru acces O(1). Verifică doar începuturile de secvență.",
+        "editorial": "Set(nums). For n in set: if n-1 not in set, start counting sequence.",
+        "test_cases": [
+            {"input_data": "[100, 4, 200, 1, 3, 2]", "expected_output": "4"},
+            {"input_data": "[0,3,7,2,5,8,4,6,0,1]", "expected_output": "9"}
         ]
     }
 ]
-
-ALL_PROBLEMS = PROBLEMS_EASY + PROBLEMS_MEDIUM + PROBLEMS_HARD
 
 def seed_db():
     print("🌱 Starting Database Seed...")
@@ -312,7 +436,6 @@ def seed_db():
             # 1. Verificam daca problema exista deja
             exists = db.query(Problem).filter(Problem.title == p_data["title"]).first()
             if exists:
-                # print(f"⚠️  Problema '{p_data['title']}' exista deja. Sarim peste.")
                 continue
 
             print(f"➕ Adding: {p_data['title']} ({p_data['difficulty']})")
